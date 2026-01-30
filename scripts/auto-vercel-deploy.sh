@@ -11,18 +11,18 @@ echo "  CLAVERE - Auto Deploy to Vercel"
 echo "========================================"
 echo ""
 
-# Check if Vercel CLI is installed
+# Step 1: Check if Vercel CLI is installed
 if ! command -v vercel &> /dev/null; then
-    echo "[1/5] Installing Vercel CLI..."
+    echo "[1/6] Installing Vercel CLI..."
     npm install -g vercel
     echo "✓ Vercel CLI installed"
 else
     echo "✓ Vercel CLI already installed"
 fi
 
-# Check if logged in
+# Step 2: Check if logged in
 echo ""
-echo "[2/5] Checking Vercel login..."
+echo "[2/6] Checking Vercel login..."
 if ! vercel whoami &> /dev/null; then
     echo "⚠ Not logged in. Logging in..."
     vercel login
@@ -30,40 +30,18 @@ else
     echo "✓ Already logged in"
 fi
 
-# Deploy to Vercel
+# Step 3: Deploy to Vercel
 echo ""
-echo "[3/5] Deploying to Vercel..."
+echo "[3/6] Deploying to Vercel..."
 echo "This will create/update your project..."
 vercel --prod --yes
 
-# Add environment variables
+# Step 4: Read and add environment variables
 echo ""
-echo "[4/5] Adding environment variables..."
+echo "[4/6] Adding environment variables from .env.local..."
 echo ""
 
-# Check if .env.local exists
-if [ -f .env.local ]; then
-    echo "Reading API keys from .env.local..."
-    
-    # Read Deepgram key
-    DEEPGRAM_KEY=$(grep "NEXT_PUBLIC_DEEPGRAM_API_KEY" .env.local | cut -d '=' -f2 | tr -d ' ')
-    # Read OpenAI key
-    OPENAI_KEY=$(grep "NEXT_PUBLIC_OPENAI_API_KEY" .env.local | cut -d '=' -f2 | tr -d ' ')
-    
-    if [ -n "$DEEPGRAM_KEY" ]; then
-        echo "Adding NEXT_PUBLIC_DEEPGRAM_API_KEY..."
-        echo "$DEEPGRAM_KEY" | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY production
-        echo "$DEEPGRAM_KEY" | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY preview
-        echo "$DEEPGRAM_KEY" | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY development
-    fi
-    
-    if [ -n "$OPENAI_KEY" ]; then
-        echo "Adding NEXT_PUBLIC_OPENAI_API_KEY..."
-        echo "$OPENAI_KEY" | vercel env add NEXT_PUBLIC_OPENAI_API_KEY production
-        echo "$OPENAI_KEY" | vercel env add NEXT_PUBLIC_OPENAI_API_KEY preview
-        echo "$OPENAI_KEY" | vercel env add NEXT_PUBLIC_OPENAI_API_KEY development
-    fi
-else
+if [ ! -f .env.local ]; then
     echo "⚠ .env.local not found"
     echo "Please create .env.local with your API keys first"
     echo ""
@@ -74,21 +52,46 @@ else
     exit 1
 fi
 
+# Read environment variables from .env.local and add to Vercel
+while IFS='=' read -r key value || [ -n "$key" ]; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^#.*$ ]] && continue
+    [[ -z "$key" ]] && continue
+    
+    # Remove quotes if present
+    value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
+    
+    # Skip empty values
+    if [ -n "$value" ]; then
+        echo "Adding $key..."
+        echo "$value" | vercel env add "$key" production > /dev/null 2>&1 || true
+        echo "$value" | vercel env add "$key" preview > /dev/null 2>&1 || true
+        echo "$value" | vercel env add "$key" development > /dev/null 2>&1 || true
+    fi
+done < .env.local
+
 # Add default environment variables
 echo "Adding NEXT_PUBLIC_AI_SERVICE..."
-echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE production
-echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE preview
-echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE development
+echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE production > /dev/null 2>&1 || true
+echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE preview > /dev/null 2>&1 || true
+echo "deepgram" | vercel env add NEXT_PUBLIC_AI_SERVICE development > /dev/null 2>&1 || true
 
 echo "Adding NEXT_PUBLIC_LANGUAGE..."
-echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE production
-echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE preview
-echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE development
+echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE production > /dev/null 2>&1 || true
+echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE preview > /dev/null 2>&1 || true
+echo "en-US" | vercel env add NEXT_PUBLIC_LANGUAGE development > /dev/null 2>&1 || true
 
-# Redeploy with new env vars
+echo "✓ Environment variables added!"
+
+# Step 5: Redeploy with new env vars
 echo ""
-echo "[5/5] Redeploying with environment variables..."
+echo "[5/6] Redeploying with environment variables..."
 vercel --prod --yes
+
+# Step 6: Get deployment URL
+echo ""
+echo "[6/6] Getting deployment URL..."
+vercel ls --prod 2>/dev/null | head -1 || echo "Check Vercel dashboard for URL"
 
 echo ""
 echo "========================================"

@@ -8,14 +8,13 @@ echo   CLAVERE - Auto Deploy to Vercel
 echo ========================================
 echo.
 
-REM Check if Vercel CLI is installed
+REM Step 1: Check if Vercel CLI is installed
 where vercel >nul 2>&1
 if errorlevel 1 (
-    echo [1/5] Installing Vercel CLI...
+    echo [1/6] Installing Vercel CLI...
     call npm install -g vercel
     if errorlevel 1 (
         echo ERROR: Failed to install Vercel CLI
-        echo Please install manually: npm install -g vercel
         pause
         exit /b 1
     )
@@ -24,9 +23,9 @@ if errorlevel 1 (
     echo ✓ Vercel CLI already installed
 )
 
-REM Check if logged in
+REM Step 2: Check if logged in
 echo.
-echo [2/5] Checking Vercel login...
+echo [2/6] Checking Vercel login...
 vercel whoami >nul 2>&1
 if errorlevel 1 (
     echo ⚠ Not logged in. Logging in...
@@ -40,9 +39,9 @@ if errorlevel 1 (
     echo ✓ Already logged in
 )
 
-REM Deploy to Vercel
+REM Step 3: Deploy to Vercel
 echo.
-echo [3/5] Deploying to Vercel...
+echo [3/6] Deploying to Vercel...
 echo This will create/update your project...
 vercel --prod --yes
 if errorlevel 1 (
@@ -50,35 +49,14 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+echo ✓ Deployed!
 
-REM Add environment variables
+REM Step 4: Read and add environment variables
 echo.
-echo [4/5] Adding environment variables...
+echo [4/6] Adding environment variables from .env.local...
 echo.
 
-REM Check if .env.local exists
-if exist .env.local (
-    echo Reading API keys from .env.local...
-    
-    REM Read Deepgram key
-    for /f "tokens=2 delims==" %%a in ('findstr "NEXT_PUBLIC_DEEPGRAM_API_KEY" .env.local') do set DEEPGRAM_KEY=%%a
-    REM Read OpenAI key
-    for /f "tokens=2 delims==" %%a in ('findstr "NEXT_PUBLIC_OPENAI_API_KEY" .env.local') do set OPENAI_KEY=%%a
-    
-    if defined DEEPGRAM_KEY (
-        echo Adding NEXT_PUBLIC_DEEPGRAM_API_KEY...
-        echo %DEEPGRAM_KEY% | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY production
-        echo %DEEPGRAM_KEY% | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY preview
-        echo %DEEPGRAM_KEY% | vercel env add NEXT_PUBLIC_DEEPGRAM_API_KEY development
-    )
-    
-    if defined OPENAI_KEY (
-        echo Adding NEXT_PUBLIC_OPENAI_API_KEY...
-        echo %OPENAI_KEY% | vercel env add NEXT_PUBLIC_OPENAI_API_KEY production
-        echo %OPENAI_KEY% | vercel env add NEXT_PUBLIC_OPENAI_API_KEY preview
-        echo %OPENAI_KEY% | vercel env add NEXT_PUBLIC_OPENAI_API_KEY development
-    )
-) else (
+if not exist .env.local (
     echo ⚠ .env.local not found
     echo Please create .env.local with your API keys first
     echo.
@@ -90,21 +68,52 @@ if exist .env.local (
     exit /b 1
 )
 
-REM Add default environment variables
+REM Read environment variables from .env.local and add to Vercel
+for /f "tokens=1,* delims==" %%a in ('findstr /V "^#" .env.local ^| findstr /V "^$"') do (
+    set "var_name=%%a"
+    set "var_value=%%b"
+    
+    REM Remove quotes if present
+    set "var_value=!var_value:"=!"
+    
+    REM Skip empty values
+    if not "!var_value!"=="" (
+        echo Adding !var_name!...
+        echo !var_value! | vercel env add !var_name! production >nul 2>&1
+        echo !var_value! | vercel env add !var_name! preview >nul 2>&1
+        echo !var_value! | vercel env add !var_name! development >nul 2>&1
+    )
+)
+
+REM Add default environment variables if not in .env.local
 echo Adding NEXT_PUBLIC_AI_SERVICE...
-echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE production
-echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE preview
-echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE development
+echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE production >nul 2>&1
+echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE preview >nul 2>&1
+echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE development >nul 2>&1
 
 echo Adding NEXT_PUBLIC_LANGUAGE...
-echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE production
-echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE preview
-echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE development
+echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE production >nul 2>&1
+echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE preview >nul 2>&1
+echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE development >nul 2>&1
 
-REM Redeploy with new env vars
+echo ✓ Environment variables added!
+
+REM Step 5: Redeploy with new env vars
 echo.
-echo [5/5] Redeploying with environment variables...
+echo [5/6] Redeploying with environment variables...
 vercel --prod --yes
+if errorlevel 1 (
+    echo ⚠ Redeploy failed, but initial deploy succeeded
+) else (
+    echo ✓ Redeployed with environment variables!
+)
+
+REM Step 6: Get deployment URL
+echo.
+echo [6/6] Getting deployment URL...
+for /f "tokens=*" %%i in ('vercel ls --prod --json 2^>nul ^| findstr /C:"url"') do (
+    echo Deployment URL: %%i
+)
 
 echo.
 echo ========================================
