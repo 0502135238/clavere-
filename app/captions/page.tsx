@@ -134,67 +134,69 @@ export default function CaptionsPage() {
         overlapManagerRef.current = overlapManager
 
         // Start transcription
-        // Handle different service types with type-safe callbacks
+        // Extract callbacks to avoid type issues with async
+        const onChunk = (chunk: CaptionChunk): void => {
+          const processedText = processTextForMode(chunk, settings.captionMode)
+          
+          // Create speech segment for overlap management
+          const segmentId = `seg-${++segmentIdCounter.current}`
+          const segment: SpeechSegment = {
+            id: segmentId,
+            speakerId: chunk.speakerId || 'unknown',
+            text: processedText,
+            startTime: chunk.timestamp - 2000,
+            endTime: chunk.timestamp,
+            isComplete: true,
+            confidence: 0.9,
+          }
+
+          // Add to overlap manager
+          const { displayChunks } = overlapManager.addSegment(segment)
+
+          // Extract context (async, don't block)
+          if (contextServiceRef.current) {
+            const recentText = displayChunks.slice(0, 5).map(c => c.text).join(' ')
+            contextServiceRef.current.extractContext(recentText).then((ctx) => {
+              setContext({
+                topic: ctx.topic,
+                sentiment: ctx.sentiment,
+                keywords: ctx.keywords,
+              })
+            }).catch(() => {
+              // Fallback to simple extraction
+            })
+          }
+
+          // Update active speakers
+          const speakers = overlapManager.getActiveSpeakers()
+          setActiveSpeakers(speakers)
+
+          // Analyze conversation
+          analyzer.analyzeChunk(chunk)
+
+          // Save to storage
+          if (sessionServiceRef.current) {
+            TranscriptStorage.saveChunk(sessionServiceRef.current.getSessionId(), chunk)
+          }
+
+          // Clean up old chunks to prevent memory leaks
+          const cleanedChunks = cleanupOldChunks(displayChunks, 60000, 50)
+
+          // Update display chunks
+          setChunks(cleanedChunks)
+          setCurrentIndex(0)
+        }
+
+        const onErrorCallback = (error: Error): void => {
+          const appError = handleError(error)
+          logError(appError, { component: 'CaptionsPage' })
+          showToast(appError.userMessage || 'Transcription error occurred', 'error')
+        }
+
+        // Start transcription with proper type handling
         if (service instanceof DeepgramService || service instanceof SpeechRecognitionStream) {
           // These services use (chunk: CaptionChunk) => void
-          service.start(
-            (chunk: CaptionChunk) => {
-              const processedText = processTextForMode(chunk, settings.captionMode)
-              
-              // Create speech segment for overlap management
-              const segmentId = `seg-${++segmentIdCounter.current}`
-              const segment: SpeechSegment = {
-                id: segmentId,
-                speakerId: chunk.speakerId || 'unknown',
-                text: processedText,
-                startTime: chunk.timestamp - 2000,
-                endTime: chunk.timestamp,
-                isComplete: true,
-                confidence: 0.9,
-              }
-
-              // Add to overlap manager
-              const { displayChunks } = overlapManager.addSegment(segment)
-
-              // Extract context (async, don't block)
-              if (contextServiceRef.current) {
-                const recentText = displayChunks.slice(0, 5).map(c => c.text).join(' ')
-                contextServiceRef.current.extractContext(recentText).then((ctx) => {
-                  setContext({
-                    topic: ctx.topic,
-                    sentiment: ctx.sentiment,
-                    keywords: ctx.keywords,
-                  })
-                }).catch(() => {
-                  // Fallback to simple extraction
-                })
-              }
-
-              // Update active speakers
-              const speakers = overlapManager.getActiveSpeakers()
-              setActiveSpeakers(speakers)
-
-              // Analyze conversation
-              analyzer.analyzeChunk(chunk)
-
-              // Save to storage
-              if (sessionServiceRef.current) {
-                TranscriptStorage.saveChunk(sessionServiceRef.current.getSessionId(), chunk)
-              }
-
-              // Clean up old chunks to prevent memory leaks
-              const cleanedChunks = cleanupOldChunks(displayChunks, 60000, 50)
-
-              // Update display chunks
-              setChunks(cleanedChunks)
-              setCurrentIndex(0)
-            },
-            (error: Error) => {
-              const appError = handleError(error)
-              logError(appError, { component: 'CaptionsPage' })
-              showToast(appError.userMessage || 'Transcription error occurred', 'error')
-            }
-          )
+          service.start(onChunk, onErrorCallback)
         } else {
           // AITranscriptionService uses (result: TranscriptionResult) => void
           // For now, skip this service type or handle differently
