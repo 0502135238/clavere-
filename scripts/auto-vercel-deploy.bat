@@ -28,13 +28,37 @@ echo.
 echo [2/6] Checking Vercel login...
 vercel whoami >nul 2>&1
 if errorlevel 1 (
-    echo ⚠ Not logged in. Logging in...
-    vercel login
+    echo.
+    echo ⚠ Not logged in to Vercel
+    echo.
+    echo IMPORTANT: Login requires browser interaction (one-time only)
+    echo.
+    echo Option 1: Login now (will open browser)
+    echo Option 2: Run login separately first: .\scripts\quick-login.bat
+    echo.
+    echo Press 1 to login now, or 2 to exit and login separately:
+    set /p LOGIN_CHOICE=
+    if "%LOGIN_CHOICE%"=="2" (
+        echo.
+        echo Run this first: .\scripts\quick-login.bat
+        echo Then run this script again.
+        pause
+        exit /b 0
+    )
+    echo.
+    echo Opening browser for Vercel login...
+    echo Please complete the login in your browser, then press any key here...
+    start /wait vercel login
+    echo.
+    echo Verifying login...
+    vercel whoami >nul 2>&1
     if errorlevel 1 (
-        echo ERROR: Login failed
+        echo ERROR: Login failed or not completed
+        echo Please run: .\scripts\quick-login.bat
         pause
         exit /b 1
     )
+    echo ✓ Login successful!
 ) else (
     echo ✓ Already logged in
 )
