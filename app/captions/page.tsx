@@ -107,6 +107,13 @@ export default function CaptionsPage() {
       try {
         // Get configuration
         const appConfig = getAppConfig()
+        
+        console.log('🔍 Initializing service with config:', {
+          serviceType: appConfig.aiService,
+          hasDeepgramKey: !!appConfig.deepgramApiKey,
+          deepgramKeyPreview: appConfig.deepgramApiKey ? `${appConfig.deepgramApiKey.substring(0, 10)}...` : 'none',
+          language: appConfig.language,
+        })
 
         const config: AIServiceConfig = {
           type: appConfig.aiService,
@@ -117,7 +124,18 @@ export default function CaptionsPage() {
         }
 
         // Create transcription service
-        const service = AIServiceFactory.createTranscriptionService(config)
+        let service
+        try {
+          service = AIServiceFactory.createTranscriptionService(config)
+        } catch (error: any) {
+          console.error('❌ Failed to create service:', error.message)
+          showToast(`Service error: ${error.message}`, 'error')
+          // Fallback to Web Speech API
+          service = AIServiceFactory.createTranscriptionService({
+            ...config,
+            type: 'webspeech',
+          })
+        }
         
         // Create context service (optional)
         const contextService = AIServiceFactory.createContextService(config)

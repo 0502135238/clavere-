@@ -24,15 +24,42 @@ export function getAppConfig(): AppConfig {
   // Auto-detect service if not specified
   let aiService: AppConfig['aiService'] = serviceType || 'webspeech'
   
+  // Validate Deepgram key
+  const hasValidDeepgramKey = deepgramKey && 
+    deepgramKey !== 'paste-your-deepgram-api-key-here' && 
+    deepgramKey.length > 10 &&
+    !deepgramKey.includes('your-key-here')
+  
+  // Validate AssemblyAI key
+  const hasValidAssemblyKey = assemblyaiKey && 
+    assemblyaiKey !== 'paste-your-assemblyai-api-key-here' && 
+    assemblyaiKey.length > 10 &&
+    !assemblyaiKey.includes('your-key-here')
+  
   if (!serviceType) {
-    // Auto-select based on available keys
-    if (deepgramKey && deepgramKey !== 'paste-your-deepgram-api-key-here' && deepgramKey.length > 10) {
+    // Auto-select based on available keys (prioritize Deepgram)
+    if (hasValidDeepgramKey) {
       aiService = 'deepgram'
-    } else if (assemblyaiKey && assemblyaiKey !== 'paste-your-assemblyai-api-key-here' && assemblyaiKey.length > 10) {
+    } else if (hasValidAssemblyKey) {
       aiService = 'assemblyai'
     } else {
       aiService = 'webspeech'
     }
+  } else if (serviceType === 'deepgram' && !hasValidDeepgramKey) {
+    // If explicitly set to deepgram but key is invalid, fall back to webspeech
+    console.warn('⚠️ Deepgram selected but API key invalid, falling back to Web Speech API')
+    aiService = 'webspeech'
+  }
+  
+  // Log configuration for debugging
+  if (typeof window !== 'undefined') {
+    console.log('🔧 Service Configuration:', {
+      requested: serviceType || 'auto',
+      selected: aiService,
+      hasDeepgramKey: hasValidDeepgramKey,
+      hasAssemblyKey: hasValidAssemblyKey,
+      deepgramKeyLength: deepgramKey?.length || 0,
+    })
   }
 
   return {
