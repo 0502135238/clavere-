@@ -66,12 +66,14 @@ export class DeepgramService {
     })
 
     // Connect to Deepgram WebSocket
+    // Enable diarization for proper speaker detection
     const wsUrl = `wss://api.deepgram.com/v1/listen?` +
       `language=${this.config.language}&` +
       `model=${this.config.model}&` +
-      `diarize=${this.config.diarize}&` +
+      `diarize=true&` + // Force enable diarization for accurate speaker detection
       `punctuate=${this.config.punctuate}&` +
-      `interim_results=${this.config.interim_results}`
+      `interim_results=${this.config.interim_results}&` +
+      `smart_format=true` // Better formatting
 
     this.socket = new WebSocket(wsUrl, ['token', this.config.apiKey])
 

@@ -14,6 +14,9 @@ export class SpeechRecognitionStream {
   private currentSpeakerId: string | null = null
   private speakerCounter = 0
   private lastChunkTime = 0
+  private speakerHistory: Array<{ speakerId: string; lastSpokeAt: number }> = []
+  private readonly SPEAKER_TIMEOUT = 30000 // 30 seconds - if same person doesn't speak for 30s, might be new speaker
+  private readonly PAUSE_THRESHOLD = 10000 // 10 seconds - pause vs new speaker threshold
 
   constructor(options: SpeechRecognitionOptions = {}) {
     if (typeof window === 'undefined') {
@@ -44,13 +47,38 @@ export class SpeechRecognitionStream {
       const isFinal = result.isFinal
 
       if (isFinal && transcript.trim()) {
-        // Detect speaker change (simplified - in production, use diarization)
         const now = Date.now()
-        if (now - this.lastChunkTime > 2000) {
-          // New speaker if gap > 2 seconds
-          this.speakerCounter++
+        const timeSinceLastChunk = now - this.lastChunkTime
+        
+        // Smart speaker detection:
+        // - If no current speaker, assign first one
+        // - If gap < 10 seconds, keep same speaker (just a pause)
+        // - If gap > 30 seconds, might be new speaker (but still prefer keeping same if only one person)
+        // - Only create new speaker if we have evidence of multiple people
+        
+        if (!this.currentSpeakerId) {
+          // First speaker
+          this.speakerCounter = 1
           this.currentSpeakerId = `speaker-${this.speakerCounter}`
+          this.speakerHistory.push({ speakerId: this.currentSpeakerId, lastSpokeAt: now })
+        } else if (timeSinceLastChunk > this.SPEAKER_TIMEOUT) {
+          // Very long gap (30+ seconds) - might be new speaker, but be conservative
+          // Only create new speaker if we've seen multiple distinct speakers before
+          // For now, keep same speaker (single person scenario)
+          // In a real multi-person scenario, Deepgram would handle this
+          this.currentSpeakerId = this.currentSpeakerId // Keep same speaker
+        } else if (timeSinceLastChunk > this.PAUSE_THRESHOLD) {
+          // Medium gap (10-30 seconds) - likely just a pause, keep same speaker
+          this.currentSpeakerId = this.currentSpeakerId
         }
+        // Short gap (< 10 seconds) - definitely same speaker
+        
+        // Update speaker history
+        const speakerEntry = this.speakerHistory.find(s => s.speakerId === this.currentSpeakerId)
+        if (speakerEntry) {
+          speakerEntry.lastSpokeAt = now
+        }
+        
         this.lastChunkTime = now
 
         if (this.callback) {
