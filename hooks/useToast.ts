@@ -21,18 +21,20 @@ export function useToast() {
     setToasts((prev) => prev.filter((toast) => toast.id !== id))
   }, [])
 
-  const ToastContainer = () => (
-    <>
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
-    </>
-  )
+  const ToastContainer = () => {
+    return (
+      <>
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </>
+    )
+  }
 
   return { showToast, ToastContainer }
 }
