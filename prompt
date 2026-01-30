@@ -1,0 +1,197 @@
+Here’s a prompt you can paste into v0 / any AI app‑builder and then tweak. You can shorten it later, but start long and specific like this.
+
+You are designing a web + mobile‑friendly app for deaf and hard‑of‑hearing people to follow real‑time conversations. Focus on clarity, low strain, and mobile‑first UX. I want you to propose UI structure, components, and interaction logic (no code yet).
+
+Product concept
+Build a minimal but polished v0 of:
+
+“A live caption app that shows speech as short, readable chunks (bionic‑reading style), optimized for real conversations instead of meeting transcripts.”
+
+The app should:
+
+Run primarily on phones (small screens first), but look reasonable on desktop.
+
+Show one caption chunk at a time, not a long scrolling wall of text.
+
+Use bionic/RSV‑style emphasis (e.g., bolded mid‑letters) to make each chunk glanceable.
+
+Support subtle speaker differentiation (color, label, or icon), but keep it simple.
+
+Require no signup for v0: users open the app and can start captioning immediately.
+
+Assume a backend exists that streams text chunks and speaker metadata; focus on UI and front‑end logic.
+
+Screens and flows to design
+Design the following main screens/flows in detail:
+
+Landing / Start screen
+
+Goal: let a new user start captioning in 1–2 taps.
+
+Very simple layout: logo or app name, one short sentence about what it does, and a big “Start captions” button.
+
+Secondary small link/button: “Settings” or “Preferences”.
+
+Optional note: “No signup. Works best in quiet environments. Built for deaf and hard‑of‑hearing people.”
+
+Describe:
+
+Layout for mobile first (what’s at the top, middle, bottom).
+
+Typography choices (large, high‑contrast, accessible).
+
+Color scheme: prefer high‑contrast but not too bright; accessible palette.
+
+Live captions screen
+
+This is the core of the app. Design this very carefully.
+
+Requirements:
+
+The main UI shows one caption chunk at a time in a large area. Under it, maybe the next chunk appears briefly as a “ghost” or minimized preview.
+
+Use bionic/RSV‑style emphasis: within each word, the first part or middle letters are bolded to help the eye lock on; but do this in a way that isn’t visually overwhelming.
+
+Chunk size: 3–10 words per chunk (assume we can tune this later). UI should be okay if a chunk is shorter or slightly longer.
+
+Show subtle speaker differentiation:
+
+Could be a colored bar or dot near the chunk.
+
+Or a small label like “Speaker 1”, “Speaker 2”, “You”.
+
+Colors must be color‑blind friendly and not too aggressive.
+
+Provide a simple mic state indicator:
+
+“Listening…” vs “Paused”.
+
+Tap or button to toggle.
+
+Provide minimal controls:
+
+Button to pause/resume captions.
+
+Button to switch between “chunk mode” and “scroll mode” (full transcript), but default to chunk mode.
+
+Optionally, a very light “history” button that opens a bottom sheet with recent chunks (no infinite scrolling needed for v0).
+
+Describe:
+
+Exact layout for mobile: where the main chunk appears (center), where speaker indicator lives, where pause/resume and other buttons sit (bottom bar, top bar, etc.).
+
+Font sizes, line spacing, and background/foreground contrast to reduce eye strain in low light and bright light.
+
+How new chunks animate in (e.g., fade/slide), and how old chunks disappear or move to history.
+
+How to keep the screen from feeling “busy” while still providing enough context.
+
+Settings / Preferences screen
+
+Goal: allow small personalization without overwhelming the user.
+
+Settings to include:
+
+Caption text size: small, medium, large (show preview).
+
+Theme: light / dark / high‑contrast.
+
+Chunk length preference: short / medium / long (with a description like “short = fewer words per chunk, easier to glance”).
+
+Speaker color options: “colorful” or “minimal” (if colorful is chosen, each speaker gets a subtle color; if minimal, just a small label).
+
+Optional: “Show transcript history” on/off toggle.
+
+Describe:
+
+Layout and grouping of settings.
+
+How to make it understandable for someone who may not be a tech‑savvy power user.
+
+Transcript history view (basic)
+
+Goal: show recent chunks in a simple scrollable list without ruining the main live experience.
+
+Simple screen or bottom sheet with a vertical list of caption chunks, each with timestamp and speaker color/label.
+
+No advanced search or export in v0; just scrolling.
+
+Clear “Back” or “Close” action to return to live captions quickly.
+
+Describe:
+
+Layout and how many chunks to show by default.
+
+How to visually separate chunks (divider, spacing).
+
+How to keep history visually secondary to live captions in the overall UX.
+
+Logic and interaction details (no code, just behavior)
+Describe the behavior and UI logic as if you’re writing a spec for a developer:
+
+Chunk streaming logic (front‑end)
+
+The app receives a stream of caption chunks from a backend (each chunk includes: text, speaker_id, timestamp).
+
+When a new chunk arrives:
+
+It replaces the previous main chunk in the main view.
+
+The previous chunk is moved to the history buffer.
+
+The UI should handle brief gaps: if no new chunk arrives for a few seconds, show a subtle “Listening…” indicator and keep the last chunk visible.
+
+Bionic/RSV emphasis logic
+
+Explain how you want words styled in each chunk: e.g., bold first 3–4 letters of each word above 4 letters; keep shorter words normal.
+
+Ensure that emphasized text doesn’t make the chunk too noisy; describe design rules to keep it readable.
+
+Speaker differentiation
+
+Each speaker_id maps to a color and/or label in the UI. For v0, assume 2–4 speakers in a conversation.
+
+If the system cannot detect speaker reliably, fall back to “Unknown” or omit the label.
+
+Describe how the user can understand “who is speaking” at a glance using your design.
+
+Mobile‑first interaction
+
+Explain tap interactions:
+
+Tap on the main chunk does nothing (avoid accidental interruptions).
+
+Tap on a small button to pause/resume listening.
+
+Tap on a history icon to open transcript; swiping down closes history.
+
+Address one‑handed use: buttons reachable by thumb on phone.
+
+Edge cases
+
+Describe how the UI should behave when:
+
+The network is slow or disconnected (show a short message like “Connection issue; trying to reconnect” but keep the last chunk visible).
+
+The microphone permission is not granted (show a simple permission explanation and a button to open system settings).
+
+Text is long (someone talks non‑stop): break into multiple chunks gracefully instead of shrinking the font.
+
+Visual style & accessibility
+Specify a visual style optimized for accessibility:
+
+High‑contrast text and backgrounds.
+
+Large, legible sans‑serif font.
+
+Avoid relying solely on color to indicate speakers (always pair color with a label or icon).
+
+Make sure the design works both in quiet one‑on‑one settings and in darker noisy environments (e.g., restaurants, family dinners).
+
+Now, based on everything above:
+
+Propose a clear page structure and component list for each screen.
+
+Describe the user journey from first visit → starting captions → adjusting settings → glancing at history.
+
+Highlight any UX details that specifically reduce cognitive/eye strain for deaf and hard‑of‑hearing users in long conversations.
