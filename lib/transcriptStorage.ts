@@ -74,7 +74,7 @@ export class TranscriptStorage {
   /**
    * Save session
    */
-  private static saveSession(session: StoredSession): void {
+  static saveSession(session: StoredSession): void {
     try {
       const sessions = this.getAllSessions()
       const index = sessions.findIndex((s) => s.id === session.id)
