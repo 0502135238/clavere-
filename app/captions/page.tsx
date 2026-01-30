@@ -20,6 +20,11 @@ import { TranscriptStorage } from '@/lib/transcriptStorage'
 import { SessionService } from '@/lib/sessionService'
 import { CaptionChunk } from '@/lib/types'
 import { useSettings } from '@/lib/settings'
+import { useToast } from '@/hooks/useToast'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { ApiKeyStatus } from '@/components/ApiKeyStatus'
+import { cleanupOldChunks } from '@/lib/performance'
+import { handleError, logError } from '@/lib/errorHandler'
 
 type PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'
 
