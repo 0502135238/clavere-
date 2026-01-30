@@ -130,6 +130,19 @@ export default function CaptionsPage() {
           await service.initialize()
         }
 
+        // Log which service is being used (for debugging)
+        const serviceType = service instanceof DeepgramService 
+          ? 'Deepgram (Real Voice Diarization)' 
+          : service instanceof SpeechRecognitionStream 
+          ? 'Web Speech API (Time-based detection)' 
+          : 'Other'
+        console.log('🎤 Using transcription service:', serviceType)
+        if (service instanceof DeepgramService) {
+          console.log('✅ Deepgram diarization enabled - real voice detection active!')
+        } else {
+          console.warn('⚠️ Using fallback service - voice detection is time-based only')
+        }
+
         const analyzer = new ConversationAnalyzer()
         const overlapManager = new OverlapManager()
 
