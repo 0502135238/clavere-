@@ -16,6 +16,8 @@ import { OverlapManager, SpeechSegment } from '@/lib/overlapManager'
 import { getAppConfig } from '@/lib/config'
 import { ConversationAnalyzer } from '@/lib/conversationAnalysis'
 import { processTextForMode } from '@/lib/textProcessing'
+import { TranscriptStorage } from '@/lib/transcriptStorage'
+import { SessionService } from '@/lib/sessionService'
 import { CaptionChunk } from '@/lib/types'
 import { useSettings } from '@/lib/settings'
 
@@ -45,8 +47,16 @@ export default function CaptionsPage() {
   const contextServiceRef = useRef<OpenAIContextService | null>(null)
   const overlapManagerRef = useRef<OverlapManager | null>(null)
   const analyzerRef = useRef<ConversationAnalyzer | null>(null)
+  const sessionServiceRef = useRef<SessionService | null>(null)
   const segmentIdCounter = useRef(0)
   const { showToast, ToastContainer } = useToast()
+
+  // Initialize session service
+  useEffect(() => {
+    if (!sessionServiceRef.current) {
+      sessionServiceRef.current = new SessionService(sessionTitle)
+    }
+  }, [sessionTitle])
 
   // Check browser support
   useEffect(() => {
@@ -158,6 +168,11 @@ export default function CaptionsPage() {
 
             // Analyze conversation
             analyzer.analyzeChunk(chunk)
+
+            // Save to storage
+            if (sessionServiceRef.current) {
+              TranscriptStorage.saveChunk(sessionServiceRef.current.getSessionId(), chunk)
+            }
 
             // Clean up old chunks to prevent memory leaks
             const cleanedChunks = cleanupOldChunks(displayChunks, 60000, 50)
