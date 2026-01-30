@@ -8,6 +8,16 @@ echo   CLAVERE - Quick Deploy
 echo ========================================
 echo.
 
+REM Sync environment variables first
+if exist .env.local (
+    echo [0/4] Syncing environment variables to Vercel...
+    call scripts\sync-env.bat
+    if errorlevel 1 (
+        echo ⚠️  Env sync had issues, but continuing with deployment...
+    )
+    echo.
+)
+
 REM Skip login check - just try to deploy
 echo [1/4] Deploying to Vercel...
 echo Using project name: clavere
@@ -25,41 +35,15 @@ if errorlevel 1 (
     )
 )
 
-REM Add environment variables from .env.local
 echo.
-echo [2/4] Adding environment variables...
-if not exist .env.local (
-    echo ⚠ .env.local not found - skipping env vars
-    goto :redeploy
-)
-
-echo Reading .env.local...
-for /f "tokens=1,* delims==" %%a in ('findstr /V "^#" .env.local ^| findstr /V "^$"') do (
-    set "var_name=%%a"
-    set "var_value=%%b"
-    set "var_value=!var_value:"=!"
-    if not "!var_value!"=="" (
-        echo Adding !var_name!...
-        echo !var_value! | vercel env add !var_name! production >nul 2>&1
-        echo !var_value! | vercel env add !var_name! preview >nul 2>&1
-        echo !var_value! | vercel env add !var_name! development >nul 2>&1
-    )
-)
-
-echo Adding defaults...
-echo deepgram | vercel env add NEXT_PUBLIC_AI_SERVICE production >nul 2>&1
-echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE production >nul 2>&1
-
-:redeploy
-echo.
-echo [3/4] Redeploying with environment variables...
+echo [2/4] Deployment complete!
 vercel --prod --yes --name clavere
 if errorlevel 1 (
     vercel --prod --yes
 )
 
 echo.
-echo [4/4] Getting deployment URL...
+echo [3/4] Getting deployment URL...
 vercel ls --prod 2>nul | findstr /C:"https" | head -1
 
 echo.
