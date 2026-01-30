@@ -9,7 +9,8 @@
     "lint": "next lint",
     "setup": "node scripts/create-repo.js",
     "deploy": "node scripts/create-repo.js && echo 'Now go to https://vercel.com/new to deploy'",
-    "quick-deploy": "chmod +x scripts/auto-deploy.sh && ./scripts/auto-deploy.sh"
+    "quick-deploy": "chmod +x scripts/auto-deploy.sh && ./scripts/auto-deploy.sh",
+    "sync-env": "node scripts/sync-env-to-vercel.js"
   },
   "dependencies": {
     "next": "^16.1.6",
