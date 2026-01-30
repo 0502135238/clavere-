@@ -27,40 +27,35 @@ REM Step 2: Check if logged in
 echo.
 echo [2/6] Checking Vercel login...
 vercel whoami >nul 2>&1
-if errorlevel 1 (
+set LOGIN_STATUS=%ERRORLEVEL%
+if %LOGIN_STATUS% NEQ 0 (
     echo.
-    echo ⚠ Not logged in to Vercel
+    echo ⚠ Not logged in to Vercel (or login check failed)
     echo.
-    echo IMPORTANT: Login requires browser interaction (one-time only)
+    echo Testing login status...
+    vercel whoami
     echo.
-    echo Option 1: Login now (will open browser)
-    echo Option 2: Run login separately first: .\scripts\quick-login.bat
+    echo If you see your username above, you ARE logged in.
+    echo If you see an error, you need to login.
     echo.
-    echo Press 1 to login now, or 2 to exit and login separately:
-    set /p LOGIN_CHOICE=
-    if "%LOGIN_CHOICE%"=="2" (
-        echo.
-        echo Run this first: .\scripts\quick-login.bat
-        echo Then run this script again.
-        pause
-        exit /b 0
-    )
+    echo Press any key to continue with login check...
+    pause >nul
     echo.
-    echo Opening browser for Vercel login...
-    echo Please complete the login in your browser, then press any key here...
-    start /wait vercel login
-    echo.
-    echo Verifying login...
+    echo Attempting to verify login again...
     vercel whoami >nul 2>&1
     if errorlevel 1 (
-        echo ERROR: Login failed or not completed
-        echo Please run: .\scripts\quick-login.bat
+        echo.
+        echo Still not logged in. Please run:
+        echo   vercel login
+        echo.
+        echo Then run this script again.
         pause
         exit /b 1
     )
-    echo ✓ Login successful!
+    echo ✓ Login verified!
 ) else (
     echo ✓ Already logged in
+    vercel whoami
 )
 
 REM Step 3: Deploy to Vercel
