@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { SettingsProvider } from '@/lib/settings'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -8,9 +8,14 @@ export const metadata: Metadata = {
   description: 'CLAVERE: AI-powered real-time conversation captions for deaf and hard-of-hearing people. Features speaker diarization, overlap detection, and bionic reading.',
   keywords: ['captions', 'transcription', 'accessibility', 'deaf', 'hard of hearing', 'real-time', 'speech to text'],
   authors: [{ name: 'CLAVERE' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  themeColor: '#9333ea',
   manifest: '/manifest.json',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#9333ea',
 }
 
 export default function RootLayout({

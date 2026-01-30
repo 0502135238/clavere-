@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+
+// Force dynamic rendering - this page requires client-side only features
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge' // Use edge runtime to skip SSR
 import { MultiSpeakerDisplay } from '@/components/MultiSpeakerDisplay'
 import { ContextDisplay } from '@/components/ContextDisplay'
 import { Sidebar } from '@/components/Sidebar'

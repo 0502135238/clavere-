@@ -77,7 +77,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
 export function useSettings() {
   const context = useContext(SettingsContext)
+  // During SSR or if context is undefined, return default settings
   if (context === undefined) {
+    if (typeof window === 'undefined') {
+      // SSR: return default settings
+      return {
+        settings: defaultSettings,
+        updateSettings: () => {},
+      }
+    }
     throw new Error('useSettings must be used within a SettingsProvider')
   }
   return context
