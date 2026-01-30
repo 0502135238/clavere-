@@ -1,0 +1,20 @@
+🚀 FULLY AUTOMATED DEPLOYMENT
+=============================
+
+Just run this ONE command:
+
+Windows:
+  .\scripts\auto-vercel-deploy.bat
+
+That's it! The script does EVERYTHING:
+- Installs Vercel CLI
+- Logs you in (one-time, opens browser)
+- Deploys your app
+- Reads API keys from .env.local
+- Adds all environment variables
+- Redeploys
+- Done!
+
+Make sure you have .env.local with your API keys first!
+
+After first deploy, just "git push" - fully automated! 🎉
