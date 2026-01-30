@@ -62,11 +62,16 @@ REM Step 3: Deploy to Vercel
 echo.
 echo [3/6] Deploying to Vercel...
 echo This will create/update your project...
-vercel --prod --yes
+echo Using project name: clavere
+vercel --prod --yes --name clavere
 if errorlevel 1 (
-    echo ERROR: Deployment failed
-    pause
-    exit /b 1
+    echo Trying without name flag...
+    vercel --prod --yes
+    if errorlevel 1 (
+        echo ERROR: Deployment failed
+        pause
+        exit /b 1
+    )
 )
 echo ✓ Deployed!
 
@@ -120,9 +125,14 @@ echo ✓ Environment variables added!
 REM Step 5: Redeploy with new env vars
 echo.
 echo [5/6] Redeploying with environment variables...
-vercel --prod --yes
+vercel --prod --yes --name clavere
 if errorlevel 1 (
-    echo ⚠ Redeploy failed, but initial deploy succeeded
+    vercel --prod --yes
+    if errorlevel 1 (
+        echo ⚠ Redeploy failed, but initial deploy succeeded
+    ) else (
+        echo ✓ Redeployed with environment variables!
+    )
 ) else (
     echo ✓ Redeployed with environment variables!
 )

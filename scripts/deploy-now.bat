@@ -10,13 +10,19 @@ echo.
 
 REM Skip login check - just try to deploy
 echo [1/4] Deploying to Vercel...
-vercel --prod --yes
+echo Using project name: clavere
+vercel --prod --yes --name clavere
 if errorlevel 1 (
     echo.
-    echo ⚠ Deployment failed. You might need to login:
-    echo   vercel login
-    pause
-    exit /b 1
+    echo ⚠ Deployment failed. Trying without name flag...
+    vercel --prod --yes
+    if errorlevel 1 (
+        echo.
+        echo ⚠ Deployment failed. You might need to login:
+        echo   vercel login
+        pause
+        exit /b 1
+    )
 )
 
 REM Add environment variables from .env.local
@@ -47,7 +53,10 @@ echo en-US | vercel env add NEXT_PUBLIC_LANGUAGE production >nul 2>&1
 :redeploy
 echo.
 echo [3/4] Redeploying with environment variables...
-vercel --prod --yes
+vercel --prod --yes --name clavere
+if errorlevel 1 (
+    vercel --prod --yes
+)
 
 echo.
 echo [4/4] Getting deployment URL...
