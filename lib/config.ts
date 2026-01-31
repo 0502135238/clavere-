@@ -51,14 +51,13 @@ export function getAppConfig(): AppConfig {
     aiService = 'webspeech'
   }
   
-  // Log configuration for debugging
-  if (typeof window !== 'undefined') {
+  // Log configuration for debugging (development only)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     console.log('🔧 Service Configuration:', {
       requested: serviceType || 'auto',
       selected: aiService,
       hasDeepgramKey: hasValidDeepgramKey,
       hasAssemblyKey: hasValidAssemblyKey,
-      deepgramKeyLength: deepgramKey?.length || 0,
     })
   }
 

@@ -142,10 +142,7 @@ Access settings from the captions page:
 
 ## 📚 Documentation
 
-- `QUICK_START.md` - Quick setup guide
-- `SETUP_INSTRUCTIONS.md` - Detailed setup
-- `AI_SERVICES_PLAN.md` - AI services comparison
-- `PRODUCTION_PLAN.md` - Production roadmap
+- `SYNC_ENV.md` - How to sync environment variables to Vercel
 
 ## 🐛 Troubleshooting
 
@@ -172,11 +169,21 @@ Access settings from the captions page:
 # Install Vercel CLI
 npm i -g vercel
 
+# Login (one-time)
+vercel login
+
+# Sync environment variables from .env.local
+npm run sync-env
+# or
+scripts\sync-env.bat
+
 # Deploy
-vercel
+scripts\deploy-now.bat
+# or
+vercel --prod
 ```
 
-Add environment variables in Vercel dashboard.
+The sync script automatically reads your `.env.local` and sets all variables in Vercel. No manual clicking needed!
 
 ### Self-hosted
 

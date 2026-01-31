@@ -108,12 +108,14 @@ export default function CaptionsPage() {
         // Get configuration
         const appConfig = getAppConfig()
         
-        console.log('🔍 Initializing service with config:', {
-          serviceType: appConfig.aiService,
-          hasDeepgramKey: !!appConfig.deepgramApiKey,
-          deepgramKeyPreview: appConfig.deepgramApiKey ? `${appConfig.deepgramApiKey.substring(0, 10)}...` : 'none',
-          language: appConfig.language,
-        })
+        // Debug logging (development only)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 Initializing service with config:', {
+            serviceType: appConfig.aiService,
+            hasDeepgramKey: !!appConfig.deepgramApiKey,
+            language: appConfig.language,
+          })
+        }
 
         const config: AIServiceConfig = {
           type: appConfig.aiService,
@@ -148,17 +150,17 @@ export default function CaptionsPage() {
           await service.initialize()
         }
 
-        // Log which service is being used (for debugging)
-        const serviceType = service instanceof DeepgramService 
-          ? 'Deepgram (Real Voice Diarization)' 
-          : service instanceof SpeechRecognitionStream 
-          ? 'Web Speech API (Time-based detection)' 
-          : 'Other'
-        console.log('🎤 Using transcription service:', serviceType)
-        if (service instanceof DeepgramService) {
-          console.log('✅ Deepgram diarization enabled - real voice detection active!')
-        } else {
-          console.warn('⚠️ Using fallback service - voice detection is time-based only')
+        // Log which service is being used (development only)
+        if (process.env.NODE_ENV === 'development') {
+          const serviceType = service instanceof DeepgramService 
+            ? 'Deepgram (Real Voice Diarization)' 
+            : service instanceof SpeechRecognitionStream 
+            ? 'Web Speech API (Time-based detection)' 
+            : 'Other'
+          console.log('🎤 Using transcription service:', serviceType)
+          if (service instanceof DeepgramService) {
+            console.log('✅ Deepgram diarization enabled - real voice detection active!')
+          }
         }
 
         const analyzer = new ConversationAnalyzer()
@@ -235,7 +237,9 @@ export default function CaptionsPage() {
         } else {
           // AITranscriptionService uses (result: TranscriptionResult) => void
           // For now, skip this service type or handle differently
-          console.warn('AITranscriptionService not fully supported in this implementation')
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('AITranscriptionService not fully supported in this implementation')
+          }
         }
 
         // Cleanup old segments periodically
