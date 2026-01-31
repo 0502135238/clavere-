@@ -34,7 +34,7 @@ export function handleError(error: unknown): AppError {
       return new AppError(
         error.message,
         ErrorCodes.MICROPHONE_DENIED,
-        'Microphone access is required. Please allow microphone access in your browser settings.',
+        'We need microphone access to work. This is our fault - we\'re working on a fix!',
         true
       )
     }
@@ -43,7 +43,7 @@ export function handleError(error: unknown): AppError {
       return new AppError(
         error.message,
         ErrorCodes.BROWSER_NOT_SUPPORTED,
-        'Your browser does not support speech recognition. Please use Chrome or Edge.',
+        'We\'re having trouble with your browser. This is our fault - we\'re working on it!',
         false
       )
     }
@@ -52,7 +52,7 @@ export function handleError(error: unknown): AppError {
       return new AppError(
         error.message,
         ErrorCodes.API_KEY_INVALID,
-        'API key is invalid or missing. Please check your configuration.',
+        'We\'re having trouble connecting. This is our fault - we\'re working hard to fix it!',
         true
       )
     }
@@ -61,12 +61,17 @@ export function handleError(error: unknown): AppError {
       return new AppError(
         error.message,
         ErrorCodes.NETWORK_ERROR,
-        'Network error. Please check your internet connection.',
+        'We\'re having connection issues. This is our fault - we\'re working on it!',
         true
       )
     }
 
-    return new AppError(error.message, ErrorCodes.SERVICE_ERROR, 'An unexpected error occurred.', true)
+    return new AppError(
+      error.message, 
+      ErrorCodes.SERVICE_ERROR, 
+      'We\'re having a moment. This is our fault - we\'re working very hard to bring it back!', 
+      true
+    )
   }
 
   return new AppError('Unknown error', ErrorCodes.SERVICE_ERROR, 'An unexpected error occurred.', true)

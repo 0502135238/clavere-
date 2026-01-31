@@ -42,7 +42,7 @@ export default function CaptionsPage() {
   const [sessionStartTime] = useState(new Date())
   const [permissionState, setPermissionState] = useState<PermissionState>('checking')
   const [isSupported, setIsSupported] = useState<boolean | null>(null)
-  const [isInitializing, setIsInitializing] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   
   // Context state
   const [context, setContext] = useState<{
@@ -98,12 +98,11 @@ export default function CaptionsPage() {
 
   // Initialize AI transcription service with overlap management
   useEffect(() => {
-    if (permissionState !== 'granted' || isPaused || isInitializing) {
+    if (permissionState !== 'granted' || isPaused) {
       return
     }
 
     const initializeService = async () => {
-      setIsInitializing(true)
       try {
         // Get configuration
         const appConfig = getAppConfig()
@@ -145,24 +144,6 @@ export default function CaptionsPage() {
           contextServiceRef.current = contextService
         }
 
-        // Initialize service
-        if ('initialize' in service && typeof service.initialize === 'function') {
-          await service.initialize()
-        }
-
-        // Log which service is being used (development only)
-        if (process.env.NODE_ENV === 'development') {
-          const serviceType = service instanceof DeepgramService 
-            ? 'Deepgram (Real Voice Diarization)' 
-            : service instanceof SpeechRecognitionStream 
-            ? 'Web Speech API (Time-based detection)' 
-            : 'Other'
-          console.log('🎤 Using transcription service:', serviceType)
-          if (service instanceof DeepgramService) {
-            console.log('✅ Deepgram diarization enabled - real voice detection active!')
-          }
-        }
-
         const analyzer = new ConversationAnalyzer()
         const overlapManager = new OverlapManager()
 
@@ -170,7 +151,6 @@ export default function CaptionsPage() {
         analyzerRef.current = analyzer
         overlapManagerRef.current = overlapManager
 
-        // Start transcription
         // Extract callbacks to avoid type issues with async
         const onChunk = (chunk: CaptionChunk): void => {
           const processedText = processTextForMode(chunk, settings.captionMode)
@@ -227,20 +207,31 @@ export default function CaptionsPage() {
         const onErrorCallback = (error: Error): void => {
           const appError = handleError(error)
           logError(appError, { component: 'CaptionsPage' })
-          showToast(appError.userMessage || 'Transcription error occurred', 'error')
+          showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
         }
 
-        // Start transcription with proper type handling
-        if (service instanceof DeepgramService || service instanceof SpeechRecognitionStream) {
-          // These services use (chunk: CaptionChunk) => void
-          service.start(onChunk, onErrorCallback)
-        } else {
-          // AITranscriptionService uses (result: TranscriptionResult) => void
-          // For now, skip this service type or handle differently
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('AITranscriptionService not fully supported in this implementation')
+        // Start service - handle initialization automatically in background
+        const startService = async () => {
+          try {
+            // If Deepgram, initialize first (non-blocking)
+            if (service instanceof DeepgramService) {
+              await service.initialize()
+            }
+            
+            // Start transcription
+            if (service instanceof DeepgramService || service instanceof SpeechRecognitionStream) {
+              service.start(onChunk, onErrorCallback)
+            }
+          } catch (error) {
+            // If Deepgram fails, fallback to Web Speech API immediately
+            const fallbackService = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
+            (fallbackService as SpeechRecognitionStream).start(onChunk, onErrorCallback);
+            showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
           }
         }
+
+        // Start in background - don't block UI
+        startService()
 
         // Cleanup old segments periodically
         const cleanupInterval = setInterval(() => {
@@ -253,13 +244,14 @@ export default function CaptionsPage() {
       } catch (error) {
         const appError = handleError(error)
         logError(appError, { component: 'CaptionsPage', action: 'initialize' })
-        showToast(appError.userMessage || 'Failed to initialize transcription service', 'error')
-        setPermissionState('denied')
+        showToast('We\'re having trouble starting up. This is our fault - we\'re working on it!', 'error')
+        // Don't block - let user try again
       } finally {
-        setIsInitializing(false)
+        setIsReady(true)
       }
     }
 
+    // Initialize in background without blocking
     initializeService()
 
     return () => {
@@ -267,7 +259,7 @@ export default function CaptionsPage() {
         aiServiceRef.current.stop()
       }
     }
-  }, [permissionState, isPaused, settings.captionMode, isInitializing])
+  }, [permissionState, isPaused, settings.captionMode])
 
   const togglePause = () => {
     if (!aiServiceRef.current) return
@@ -312,14 +304,11 @@ export default function CaptionsPage() {
     )
   }
 
-  // Show loading while checking or initializing
-  if (permissionState === 'checking' || isSupported === null || isInitializing) {
+  // Show loading only while checking browser support (fast check)
+  if (permissionState === 'checking' || isSupported === null) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <LoadingSpinner
-          size="lg"
-          text={isInitializing ? 'Initializing AI transcription...' : 'Checking browser support...'}
-        />
+        <LoadingSpinner size="lg" text="Starting up..." />
       </div>
     )
   }
