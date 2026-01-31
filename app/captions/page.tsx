@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 
 // Force dynamic rendering - this page requires client-side only features
 export const dynamic = 'force-dynamic'
-export const runtime = 'edge' // Use edge runtime to skip SSR
 import { MultiSpeakerDisplay } from '@/components/MultiSpeakerDisplay'
 import { ContextDisplay } from '@/components/ContextDisplay'
 import { Sidebar } from '@/components/Sidebar'
@@ -40,9 +39,13 @@ export default function CaptionsPage() {
   const [isPaused, setIsPaused] = useState(false)
   const [sessionTitle] = useState('Live Session')
   const [sessionStartTime] = useState(new Date())
+  
+  // Check browser support immediately (not in useEffect)
+  const SpeechRecognition = typeof window !== 'undefined' 
+    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+    : null
+  const [isSupported] = useState<boolean | null>(SpeechRecognition ? true : false)
   const [permissionState, setPermissionState] = useState<PermissionState>('checking')
-  const [isSupported, setIsSupported] = useState<boolean | null>(null)
-  const [isReady, setIsReady] = useState(false)
   
   // Context state
   const [context, setContext] = useState<{
@@ -67,23 +70,15 @@ export default function CaptionsPage() {
     }
   }, [sessionTitle])
 
-  // Check browser support
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      setIsSupported(!!SpeechRecognition)
-    }
-  }, [])
-
-  // Check microphone permission
+  // Check microphone permission immediately (don't wait)
   useEffect(() => {
     if (isSupported === false) {
       setPermissionState('unsupported')
       return
     }
 
-    if (isSupported === true) {
+    if (isSupported === true && typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      // Check permission quickly without blocking
       navigator.mediaDevices
         .getUserMedia({ audio: true })
         .then((stream) => {
@@ -93,6 +88,9 @@ export default function CaptionsPage() {
         .catch(() => {
           setPermissionState('denied')
         })
+    } else {
+      // If mediaDevices not available, assume granted (will fail gracefully later)
+      setPermissionState('granted')
     }
   }, [isSupported])
 
@@ -292,7 +290,7 @@ export default function CaptionsPage() {
     )
   }
 
-  // Show permission prompt
+  // Show permission prompt only if explicitly denied
   if (permissionState === 'denied') {
     return (
       <ErrorBoundary>
@@ -304,14 +302,8 @@ export default function CaptionsPage() {
     )
   }
 
-  // Show loading only while checking browser support (fast check)
-  if (permissionState === 'checking' || isSupported === null) {
-    return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Starting up..." />
-      </div>
-    )
-  }
+  // Show UI immediately - don't wait for permission check
+  // Permission check happens in background, will prompt if needed
 
   return (
     <ErrorBoundary>
