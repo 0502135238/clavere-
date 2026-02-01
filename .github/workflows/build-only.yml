@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: Build Only
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main, master]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,11 +28,6 @@ jobs:
           NEXT_PUBLIC_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEXT_PUBLIC_AI_SERVICE: ${{ secrets.AI_SERVICE || 'deepgram' }}
           NEXT_PUBLIC_LANGUAGE: ${{ secrets.LANGUAGE || 'en-US' }}
-      
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+
+      # Vercel deployment is done via CLI (vercel --prod)
+      # This workflow only builds to verify the code compiles
