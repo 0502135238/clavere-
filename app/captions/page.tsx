@@ -436,6 +436,7 @@ export default function CaptionsPage() {
     console.log('[CAPTIONS PAGE] Render check:', { showUnsupported, permissionState })
   }
 
+  // Always render something - add fallback for blank screen
   if (showUnsupported) {
     if (typeof window !== 'undefined') {
       console.log('[CAPTIONS PAGE] Rendering UnsupportedBrowser')
@@ -459,6 +460,16 @@ export default function CaptionsPage() {
           onPermissionDenied={handlePermissionDenied}
         />
       </ErrorBoundary>
+    )
+  }
+
+  // Safety check - if somehow we get here with an invalid state, show basic UI
+  if (typeof window === 'undefined') {
+    // SSR fallback
+    return (
+      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
     )
   }
 
