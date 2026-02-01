@@ -57,13 +57,40 @@ where vercel >nul 2>&1
 if errorlevel 1 (
     echo Installing Vercel CLI...
     call npm install -g vercel
+    if errorlevel 1 (
+        echo ⚠️  Failed to install Vercel CLI
+        echo Please install manually: npm install -g vercel
+        pause
+        exit /b 1
+    )
+    echo ✓ Vercel CLI installed
+) else (
+    echo ✓ Vercel CLI found
 )
+
+echo.
+echo Checking Vercel login status...
 vercel whoami >nul 2>&1
 if errorlevel 1 (
-    echo Please login to Vercel...
+    echo.
+    echo ⚠️  Not logged in to Vercel
+    echo.
+    echo Please login now...
     vercel login
+    if errorlevel 1 (
+        echo.
+        echo ⚠️  Login failed or cancelled
+        echo You can login later and deploy manually
+        echo.
+        pause
+        exit /b 1
+    )
+    echo.
+    echo ✓ Logged into Vercel
+) else (
+    echo ✓ Already logged into Vercel
+    vercel whoami
 )
-echo ✓ Vercel ready
 
 REM Step 5: Deploy
 echo.
