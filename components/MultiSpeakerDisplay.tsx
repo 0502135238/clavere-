@@ -14,15 +14,9 @@ interface MultiSpeakerDisplayProps {
  * Shows current speaker prominently, overlapping speakers alongside
  */
 export function MultiSpeakerDisplay({ chunks, currentIndex }: MultiSpeakerDisplayProps) {
-  // Show empty state without loading spinner - just empty space
+  // Show empty state - completely blank, no text
   if (chunks.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-gray-500 text-sm">Ready to listen</p>
-        </div>
-      </div>
-    )
+    return <div className="flex-1" />
   }
 
   const getKeywords = (text: string): string[] => {

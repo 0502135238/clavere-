@@ -16,13 +16,7 @@ interface MobileCaptionDisplayProps {
  */
 export function MobileCaptionDisplay({ chunks, currentIndex }: MobileCaptionDisplayProps) {
   if (chunks.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-gray-500 text-sm">Ready</p>
-        </div>
-      </div>
-    )
+    return <div className="flex-1" />
   }
 
   // Get keywords from current chunk for highlighting

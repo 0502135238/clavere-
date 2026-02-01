@@ -39,11 +39,12 @@ export default function CaptionsPage() {
   const [sessionTitle] = useState('Live Session')
   const [sessionStartTime] = useState(new Date())
   
-  // Check browser support immediately (not in useEffect)
+  // Check browser support immediately (not in useEffect) - assume supported to show UI instantly
   const SpeechRecognition = typeof window !== 'undefined' 
     ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
     : null
-  const [isSupported] = useState<boolean | null>(SpeechRecognition ? true : false)
+  // Assume supported initially - check in background, don't block UI
+  const [isSupported] = useState<boolean>(SpeechRecognition ? true : true) // Default to true to show UI
   // Start with 'granted' to show UI immediately - check in background
   const [permissionState, setPermissionState] = useState<PermissionState>('granted')
   
@@ -70,17 +71,20 @@ export default function CaptionsPage() {
     }
   }, [sessionTitle])
 
-  // Check microphone permission in background (non-blocking)
+  // Check browser support and microphone permission in background (completely non-blocking)
   useEffect(() => {
-    // Don't block - check in background
-    if (isSupported === false) {
-      setPermissionState('unsupported')
-      return
+    // Check browser support
+    if (typeof window !== 'undefined') {
+      const hasRecognition = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition
+      if (!hasRecognition) {
+        setShowUnsupported(true)
+        return
+      }
     }
 
-    // Check permission asynchronously without blocking UI
-    if (isSupported === true && typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      // Use setTimeout to make it truly non-blocking
+    // Check permission asynchronously without blocking UI - delay it
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      // Use longer delay to ensure UI renders first
       setTimeout(() => {
         navigator.mediaDevices
           .getUserMedia({ audio: true })
@@ -91,9 +95,9 @@ export default function CaptionsPage() {
           .catch(() => {
             setPermissionState('denied')
           })
-      }, 0)
+      }, 100) // Small delay to let UI render first
     }
-  }, [isSupported])
+  }, [])
 
   // Initialize AI transcription service with overlap management
   useEffect(() => {
@@ -274,8 +278,7 @@ export default function CaptionsPage() {
     setPermissionState('denied')
   }
 
-  // Show unsupported browser
-  if (isSupported === false) {
+  if (showUnsupported) {
     return (
       <ErrorBoundary>
         <UnsupportedBrowser />
