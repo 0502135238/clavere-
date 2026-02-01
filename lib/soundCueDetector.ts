@@ -46,6 +46,7 @@ export class SoundCueDetector {
       source.connect(this.analyser)
       
       const bufferLength = this.analyser.frequencyBinCount
+      // Create arrays - standard Uint8Array creation
       this.dataArray = new Uint8Array(bufferLength)
       this.timeDataArray = new Uint8Array(this.analyser.fftSize)
     } catch (error) {
@@ -67,10 +68,12 @@ export class SoundCueDetector {
       }
 
       // Get frequency data
-      this.analyser.getByteFrequencyData(this.dataArray)
+      // TypeScript workaround: cast to any to bypass strict ArrayBuffer type checking
+      this.analyser.getByteFrequencyData(this.dataArray as any)
       
       // Get time domain data for volume analysis
-      this.analyser.getByteTimeDomainData(this.timeDataArray)
+      // TypeScript workaround: cast to any to bypass strict ArrayBuffer type checking
+      this.analyser.getByteTimeDomainData(this.timeDataArray as any)
       const timeData = this.timeDataArray
 
       // Calculate average volume
