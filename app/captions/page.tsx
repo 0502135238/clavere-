@@ -465,9 +465,10 @@ export default function CaptionsPage() {
   // Show UI immediately - don't wait for permission check
   // Permission check happens in background, will prompt if needed
   if (typeof window !== 'undefined') {
-    console.log('[CAPTIONS PAGE] Rendering main UI')
+    console.log('[CAPTIONS PAGE] Rendering main UI', { permissionState, showUnsupported, chunks: chunks.length })
   }
 
+  // Always render something - never return null or blank
   return (
     <ErrorBoundary>
       {/* Toast Notifications */}
