@@ -37,14 +37,9 @@ export default function CaptionsPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(true) // Start paused - user must click play
   const [sessionTitle] = useState('Live Session')
-  const [sessionStartTime] = useState(() => {
-    // Use function initializer to avoid hydration mismatch
-    if (typeof window !== 'undefined') {
-      return new Date()
-    }
-    // Return a static date for SSR
-    return new Date('2024-01-01T00:00:00')
-  })
+  // Use ref for sessionStartTime to avoid hydration mismatch
+  const sessionStartTimeRef = useRef<Date>(new Date())
+  const sessionStartTime = sessionStartTimeRef.current
   
   // No browser check on initial render - assume supported to show UI instantly
   // Start with 'granted' to show UI immediately - check in background
