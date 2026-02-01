@@ -35,7 +35,12 @@ const nextConfig = {
         ]
       }
     ]
-  }
+  },
+
+  // Disable SSR for better client-side performance
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
 }
 
 module.exports = nextConfig

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 // Force dynamic rendering - this page requires client-side only features
 export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
 import { MultiSpeakerDisplay } from '@/components/MultiSpeakerDisplay'
 import { ContextDisplay } from '@/components/ContextDisplay'
 import { Sidebar } from '@/components/Sidebar'
@@ -483,11 +484,6 @@ export default function CaptionsPage() {
   // Always render something - never return null or blank
   return (
     <ErrorBoundary>
-      {/* Debug: Always visible test element to verify rendering */}
-      <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, background: 'red', color: 'white', padding: '10px', fontSize: '12px' }}>
-        DEBUG: Rendering - permissionState: {permissionState}, showUnsupported: {String(showUnsupported)}, isPaused: {String(isPaused)}
-      </div>
-      
       {/* Toast Notifications */}
       <ToastContainer />
 
