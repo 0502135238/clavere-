@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/useToast'
 import { ApiKeyStatus } from '@/components/ApiKeyStatus'
 import { cleanupOldChunks } from '@/lib/performance'
 import { handleError, logError } from '@/lib/errorHandler'
+import { SoundCueDetector, SoundCue } from '@/lib/soundCueDetector'
 
 type PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'
 
@@ -62,6 +63,7 @@ export default function CaptionsPage() {
   const overlapManagerRef = useRef<OverlapManager | null>(null)
   const analyzerRef = useRef<ConversationAnalyzer | null>(null)
   const sessionServiceRef = useRef<SessionService | null>(null)
+  const soundCueDetectorRef = useRef<SoundCueDetector | null>(null)
   const segmentIdCounter = useRef(0)
   const { showToast, ToastContainer } = useToast()
   
@@ -185,8 +187,17 @@ export default function CaptionsPage() {
           const speakers = overlapManager.getActiveSpeakers()
           setActiveSpeakers(speakers)
 
-          // Analyze conversation
-          analyzer.analyzeChunk(chunk)
+          // Analyze conversation and show notifications for events
+          const events = analyzer.analyzeChunk(chunk)
+          
+          // Show toast notifications for overlap events
+          for (const event of events) {
+            if (event.type === 'overlap') {
+              showToast('⚡ Two people talking at once!', 'warning')
+            } else if (event.type === 'interruption') {
+              showToast('⚠️ Interruption detected', 'warning')
+            }
+          }
 
           // Save to storage
           if (sessionServiceRef.current) {
@@ -207,23 +218,68 @@ export default function CaptionsPage() {
           showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
         }
 
+        // Initialize sound cue detector
+        const initializeSoundCueDetector = async () => {
+          try {
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const soundDetector = new SoundCueDetector()
+            soundDetector.initialize(audioStream)
+            soundCueDetectorRef.current = soundDetector
+
+            // Periodically detect sound cues
+            const soundCueInterval = setInterval(() => {
+              if (soundCueDetectorRef.current) {
+                const cue = soundCueDetectorRef.current.detect()
+                if (cue) {
+                  // Show toast notification for sound cue
+                  showToast(cue.message, 'info')
+                }
+              }
+            }, 500) // Check every 500ms
+
+            // Store interval for cleanup
+            return soundCueInterval
+          } catch (error) {
+            if (typeof window !== 'undefined') {
+              console.error('Failed to initialize sound cue detector:', error)
+            }
+            return null
+          }
+        }
+
         // Start service - completely non-blocking, no await
-        const startService = () => {
+        let soundCueInterval: NodeJS.Timeout | null = null
+        const startService = async () => {
           // If Deepgram, initialize in background (don't await)
           if (service instanceof DeepgramService) {
             service.initialize().then(() => {
               // Start transcription after initialization
               service.start(onChunk, onErrorCallback)
+              
+              // Initialize sound cue detector
+              initializeSoundCueDetector().then((interval) => {
+                soundCueInterval = interval
+              })
             }).catch(() => {
               // If Deepgram fails, fallback to Web Speech API immediately
               const fallbackService = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
               (fallbackService as SpeechRecognitionStream).start(onChunk);
               showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
+              
+              // Initialize sound cue detector for fallback too
+              initializeSoundCueDetector().then((interval) => {
+                soundCueInterval = interval
+              })
             })
           } else {
             // Web Speech API - start immediately
             if (service instanceof SpeechRecognitionStream) {
               service.start(onChunk)
+              
+              // Initialize sound cue detector
+              initializeSoundCueDetector().then((interval) => {
+                soundCueInterval = interval
+              })
             }
           }
         }
@@ -238,6 +294,12 @@ export default function CaptionsPage() {
 
         return () => {
           clearInterval(cleanupInterval)
+          if (soundCueInterval) {
+            clearInterval(soundCueInterval)
+          }
+          if (soundCueDetectorRef.current) {
+            soundCueDetectorRef.current.cleanup()
+          }
         }
         } catch (error) {
           const appError = handleError(error)
@@ -253,6 +315,9 @@ export default function CaptionsPage() {
     return () => {
       if (aiServiceRef.current) {
         aiServiceRef.current.stop()
+      }
+      if (soundCueDetectorRef.current) {
+        soundCueDetectorRef.current.cleanup()
       }
     }
   }, [permissionState, isPaused, settings.captionMode])
