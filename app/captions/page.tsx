@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 
 // Force dynamic rendering - this page requires client-side only features
 export const dynamic = 'force-dynamic'
-// Disable static generation completely to avoid hydration issues
-export const revalidate = 0
 // Disable SSR completely - render only on client
 export const ssr = false
 import { MultiSpeakerDisplay } from '@/components/MultiSpeakerDisplay'
