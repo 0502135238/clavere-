@@ -65,8 +65,9 @@ export default function CaptionsPage() {
   const [showUnsupported, setShowUnsupported] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Mark as mounted to avoid hydration issues
+  // Mark as mounted immediately to avoid hydration issues
   useEffect(() => {
+    console.log('[CAPTIONS PAGE] Setting mounted to true')
     setMounted(true)
     console.log('[CAPTIONS PAGE] Component mounted - START')
   }, [])
@@ -467,18 +468,9 @@ export default function CaptionsPage() {
     )
   }
 
-  // Don't render until mounted to avoid hydration mismatch
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    )
-  }
-
-  // Show UI immediately - don't wait for permission check
+  // Show UI immediately - don't wait for mounted or permission check
   // Permission check happens in background, will prompt if needed
-  console.log('[CAPTIONS PAGE] Rendering main UI', { permissionState, showUnsupported, chunks: chunks.length, isPaused })
+  console.log('[CAPTIONS PAGE] Rendering main UI', { permissionState, showUnsupported, chunks: chunks.length, isPaused, mounted })
 
   // Always render something - never return null or blank
   return (
