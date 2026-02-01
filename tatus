@@ -1,0 +1,42 @@
+[1mdiff --git a/app/captions/page.tsx b/app/captions/page.tsx[m
+[1mindex d1cf514..05137c7 100644[m
+[1m--- a/app/captions/page.tsx[m
+[1m+++ b/app/captions/page.tsx[m
+[36m@@ -33,11 +33,6 @@[m [mtype PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'[m
+ export default function CaptionsPage() {[m
+   const router = useRouter()[m
+   const { settings } = useSettings()[m
+[31m-  [m
+[31m-  // Log after hooks (React Rules of Hooks)[m
+[31m-  if (typeof window !== 'undefined') {[m
+[31m-    console.log('[CAPTIONS PAGE] Component rendering - START')[m
+[31m-  }[m
+   const [chunks, setChunks] = useState<CaptionChunk[]>([])[m
+   const [currentIndex, setCurrentIndex] = useState(0)[m
+   const [isPaused, setIsPaused] = useState(false)[m
+[36m@@ -46,12 +41,7 @@[m [mexport default function CaptionsPage() {[m
+   [m
+   // No browser check on initial render - assume supported to show UI instantly[m
+   // Start with 'granted' to show UI immediately - check in background[m
+[31m-  const [permissionState, setPermissionState] = useState<PermissionState>(() => {[m
+[31m-    if (typeof window !== 'undefined') {[m
+[31m-      console.log('[CAPTIONS PAGE] Initial permissionState set to: granted')[m
+[31m-    }[m
+[31m-    return 'granted'[m
+[31m-  })[m
+[32m+[m[32m  const [permissionState, setPermissionState] = useState<PermissionState>('granted')[m
+   [m
+   // Context state[m
+   const [context, setContext] = useState<{[m
+[36m@@ -72,6 +62,11 @@[m [mexport default function CaptionsPage() {[m
+   // Check unsupported browser in background - don't block UI[m
+   const [showUnsupported, setShowUnsupported] = useState(false)[m
+ [m
+[32m+[m[32m  // Log after all hooks (React Rules of Hooks)[m
+[32m+[m[32m  if (typeof window !== 'undefined') {[m
+[32m+[m[32m    console.log('[CAPTIONS PAGE] Component rendering - START')[m
+[32m+[m[32m  }[m
+[32m+[m
+   // Initialize session service[m
+   useEffect(() => {[m
+     if (typeof window !== 'undefined') {[m
