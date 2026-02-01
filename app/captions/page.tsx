@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 // Disable SSR completely - render only on client
 export const ssr = false
 import { MultiSpeakerDisplay } from '@/components/MultiSpeakerDisplay'
+import { ARGlassesDisplay } from '@/components/ARGlassesDisplay'
 import { ContextDisplay } from '@/components/ContextDisplay'
 import { Sidebar } from '@/components/Sidebar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
