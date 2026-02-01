@@ -63,11 +63,13 @@ export default function CaptionsPage() {
   
   // Check unsupported browser in background - don't block UI
   const [showUnsupported, setShowUnsupported] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  // Log after all hooks (React Rules of Hooks)
-  if (typeof window !== 'undefined') {
-    console.log('[CAPTIONS PAGE] Component rendering - START')
-  }
+  // Mark as mounted to avoid hydration issues
+  useEffect(() => {
+    setMounted(true)
+    console.log('[CAPTIONS PAGE] Component mounted - START')
+  }, [])
 
   // Initialize session service
   useEffect(() => {
@@ -465,9 +467,8 @@ export default function CaptionsPage() {
     )
   }
 
-  // Safety check - if somehow we get here with an invalid state, show basic UI
-  if (typeof window === 'undefined') {
-    // SSR fallback
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
         <div>Loading...</div>
@@ -477,9 +478,7 @@ export default function CaptionsPage() {
 
   // Show UI immediately - don't wait for permission check
   // Permission check happens in background, will prompt if needed
-  if (typeof window !== 'undefined') {
-    console.log('[CAPTIONS PAGE] Rendering main UI', { permissionState, showUnsupported, chunks: chunks.length })
-  }
+  console.log('[CAPTIONS PAGE] Rendering main UI', { permissionState, showUnsupported, chunks: chunks.length, isPaused })
 
   // Always render something - never return null or blank
   return (
