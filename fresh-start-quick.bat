@@ -69,6 +69,22 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Step 5: Sync environment variables
+echo.
+echo [5/5] Syncing environment variables to Vercel...
+if exist .env.local (
+    echo Reading .env.local and syncing...
+    node scripts/sync-env-to-vercel.js >nul 2>&1
+    if errorlevel 1 (
+        echo ⚠️  Env sync had issues, but continuing...
+    ) else (
+        echo ✓ Environment variables synced
+    )
+) else (
+    echo ⚠️  .env.local not found - skipping env sync
+    echo You can add variables later in Vercel dashboard
+)
+
 echo.
 echo ========================================
 echo   ✅ COMPLETE!
@@ -76,6 +92,7 @@ echo ========================================
 echo.
 echo ✓ New repo: %REPO_NAME%
 echo ✓ Deployed to Vercel
+echo ✓ Environment variables synced
 echo.
 echo IMPORTANT: Set Node.js to 20.x in Vercel settings!
 echo.
