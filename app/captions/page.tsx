@@ -35,7 +35,7 @@ export default function CaptionsPage() {
   const { settings } = useSettings()
   const [chunks, setChunks] = useState<CaptionChunk[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
+  const [isPaused, setIsPaused] = useState(true) // Start paused - user must click play
   const [sessionTitle] = useState('Live Session')
   const [sessionStartTime] = useState(new Date())
   
