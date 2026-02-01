@@ -104,9 +104,11 @@ export default function CaptionsPage() {
       return
     }
 
-    // Delay initialization significantly to ensure UI is fully rendered
+    // Use requestAnimationFrame to ensure UI has painted before initialization
+    let rafId: number
     const timeoutId = setTimeout(() => {
-      const initializeService = async () => {
+      rafId = requestAnimationFrame(() => {
+        const initializeService = async () => {
       try {
         // Get configuration
         const appConfig = getAppConfig()
@@ -249,10 +251,12 @@ export default function CaptionsPage() {
 
       // Initialize in background without blocking
       initializeService()
-    }, 500) // Delay 500ms to ensure UI renders first
+      })
+    }, 300) // Delay 300ms then wait for next frame to ensure UI renders first
 
     return () => {
       clearTimeout(timeoutId)
+      if (rafId) cancelAnimationFrame(rafId)
       if (aiServiceRef.current) {
         aiServiceRef.current.stop()
       }
