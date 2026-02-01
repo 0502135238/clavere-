@@ -47,19 +47,10 @@ export function getAppConfig(): AppConfig {
     }
   } else if (serviceType === 'deepgram' && !hasValidDeepgramKey) {
     // If explicitly set to deepgram but key is invalid, fall back to webspeech
-    console.warn('⚠️ Deepgram selected but API key invalid, falling back to Web Speech API')
     aiService = 'webspeech'
   }
   
-  // Log configuration for debugging (development only)
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('🔧 Service Configuration:', {
-      requested: serviceType || 'auto',
-      selected: aiService,
-      hasDeepgramKey: hasValidDeepgramKey,
-      hasAssemblyKey: hasValidAssemblyKey,
-    })
-  }
+  // Silent configuration - no logging
 
   return {
     deepgramApiKey: deepgramKey && deepgramKey !== 'paste-your-deepgram-api-key-here' ? deepgramKey : undefined,

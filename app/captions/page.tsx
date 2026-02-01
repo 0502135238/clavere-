@@ -106,14 +106,7 @@ export default function CaptionsPage() {
         // Get configuration
         const appConfig = getAppConfig()
         
-        // Debug logging (development only)
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Initializing service with config:', {
-            serviceType: appConfig.aiService,
-            hasDeepgramKey: !!appConfig.deepgramApiKey,
-            language: appConfig.language,
-          })
-        }
+        // Silent initialization - no logging
 
         const config: AIServiceConfig = {
           type: appConfig.aiService,
@@ -128,9 +121,7 @@ export default function CaptionsPage() {
         try {
           service = AIServiceFactory.createTranscriptionService(config)
         } catch (error: any) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('❌ Failed to create service:', error.message)
-          }
+          // Silent error handling - no logging
           showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
           // Fallback to Web Speech API
           service = AIServiceFactory.createTranscriptionService({
@@ -211,28 +202,29 @@ export default function CaptionsPage() {
           showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
         }
 
-        // Start service - handle initialization automatically in background
-        const startService = async () => {
-          try {
-            // If Deepgram, initialize first (non-blocking)
-            if (service instanceof DeepgramService) {
-              await service.initialize()
-            }
-            
-            // Start transcription
-            if (service instanceof DeepgramService || service instanceof SpeechRecognitionStream) {
+        // Start service - completely non-blocking, no await
+        const startService = () => {
+          // If Deepgram, initialize in background (don't await)
+          if (service instanceof DeepgramService) {
+            service.initialize().then(() => {
+              // Start transcription after initialization
+              service.start(onChunk, onErrorCallback)
+            }).catch(() => {
+              // If Deepgram fails, fallback to Web Speech API immediately
+              const fallbackService = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
+              (fallbackService as SpeechRecognitionStream).start(onChunk, onErrorCallback);
+              showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
+            })
+          } else {
+            // Web Speech API - start immediately
+            if (service instanceof SpeechRecognitionStream) {
               service.start(onChunk, onErrorCallback)
             }
-          } catch (error) {
-            // If Deepgram fails, fallback to Web Speech API immediately
-            const fallbackService = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
-            (fallbackService as SpeechRecognitionStream).start(onChunk, onErrorCallback);
-            showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
           }
         }
 
-        // Start in background - don't block UI
-        startService()
+        // Start in background - completely non-blocking
+        setTimeout(startService, 0)
 
         // Cleanup old segments periodically
         const cleanupInterval = setInterval(() => {

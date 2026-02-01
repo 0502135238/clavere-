@@ -19,8 +19,7 @@ export function MobileCaptionDisplay({ chunks, currentIndex }: MobileCaptionDisp
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 text-lg">Listening for speech...</p>
+          <p className="text-gray-500 text-sm">Ready</p>
         </div>
       </div>
     )
