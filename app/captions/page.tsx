@@ -33,11 +33,6 @@ type PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'
 export default function CaptionsPage() {
   const router = useRouter()
   const { settings } = useSettings()
-  
-  // Log after hooks (React Rules of Hooks)
-  if (typeof window !== 'undefined') {
-    console.log('[CAPTIONS PAGE] Component rendering - START')
-  }
   const [chunks, setChunks] = useState<CaptionChunk[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -46,12 +41,7 @@ export default function CaptionsPage() {
   
   // No browser check on initial render - assume supported to show UI instantly
   // Start with 'granted' to show UI immediately - check in background
-  const [permissionState, setPermissionState] = useState<PermissionState>(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[CAPTIONS PAGE] Initial permissionState set to: granted')
-    }
-    return 'granted'
-  })
+  const [permissionState, setPermissionState] = useState<PermissionState>('granted')
   
   // Context state
   const [context, setContext] = useState<{
@@ -71,6 +61,11 @@ export default function CaptionsPage() {
   
   // Check unsupported browser in background - don't block UI
   const [showUnsupported, setShowUnsupported] = useState(false)
+
+  // Log after all hooks (React Rules of Hooks)
+  if (typeof window !== 'undefined') {
+    console.log('[CAPTIONS PAGE] Component rendering - START')
+  }
 
   // Initialize session service
   useEffect(() => {
