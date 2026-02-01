@@ -208,13 +208,13 @@ export default function CaptionsPage() {
             }).catch(() => {
               // If Deepgram fails, fallback to Web Speech API immediately
               const fallbackService = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
-              (fallbackService as SpeechRecognitionStream).start(onChunk, onErrorCallback);
+              (fallbackService as SpeechRecognitionStream).start(onChunk);
               showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
             })
           } else {
             // Web Speech API - start immediately
             if (service instanceof SpeechRecognitionStream) {
-              service.start(onChunk, onErrorCallback)
+              service.start(onChunk)
             }
           }
         }
@@ -371,13 +371,13 @@ export default function CaptionsPage() {
                 console.error('[CAPTIONS PAGE] Deepgram init failed, falling back:', error)
               }
               const fallback = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
-              (fallback as SpeechRecognitionStream).start(onChunk, onErrorCallback);
+              (fallback as SpeechRecognitionStream).start(onChunk);
             })
           } else if (service instanceof SpeechRecognitionStream) {
             if (typeof window !== 'undefined') {
               console.log('[CAPTIONS PAGE] Starting Web Speech API service')
             }
-            service.start(onChunk, onErrorCallback)
+            service.start(onChunk)
           }
         })
         .catch((error) => {
