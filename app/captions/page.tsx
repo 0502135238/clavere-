@@ -86,9 +86,6 @@ export default function CaptionsPage() {
   }, [sessionTitle])
 
   // NO initialization on mount - everything happens on user interaction only
-  if (typeof window !== 'undefined') {
-    console.log('[CAPTIONS PAGE] Component rendering - NO initialization code running')
-  }
 
   // Initialize AI transcription service ONLY when user clicks play (not on mount)
   useEffect(() => {
