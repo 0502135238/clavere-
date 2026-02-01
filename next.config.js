@@ -37,10 +37,7 @@ const nextConfig = {
     ]
   },
 
-  // Disable SSR for better client-side performance
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
+  // Experimental features removed - invalid key in Next.js 16
 }
 
 module.exports = nextConfig

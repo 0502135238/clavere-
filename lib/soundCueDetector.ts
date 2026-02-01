@@ -23,6 +23,7 @@ export class SoundCueDetector {
   private audioContext: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private dataArray: Uint8Array | null = null
+  private timeDataArray: Uint8Array | null = null
   private lastDetectionTime: Map<SoundCueType, number> = new Map()
   private readonly COOLDOWN_MS = 2000 // Don't detect same cue within 2 seconds
   private readonly LOUD_THRESHOLD = 0.7 // Threshold for loud sounds (0-1)
@@ -46,6 +47,7 @@ export class SoundCueDetector {
       
       const bufferLength = this.analyser.frequencyBinCount
       this.dataArray = new Uint8Array(bufferLength)
+      this.timeDataArray = new Uint8Array(this.analyser.fftSize)
     } catch (error) {
       console.error('Failed to initialize sound cue detector:', error)
     }
@@ -60,12 +62,16 @@ export class SoundCueDetector {
     }
 
     try {
+      if (!this.analyser || !this.dataArray || !this.timeDataArray) {
+        return null
+      }
+
       // Get frequency data
       this.analyser.getByteFrequencyData(this.dataArray)
       
       // Get time domain data for volume analysis
-      const timeData = new Uint8Array(this.analyser.fftSize)
-      this.analyser.getByteTimeDomainData(timeData)
+      this.analyser.getByteTimeDomainData(this.timeDataArray)
+      const timeData = this.timeDataArray
 
       // Calculate average volume
       const volume = this.calculateVolume(timeData)
@@ -328,6 +334,7 @@ export class SoundCueDetector {
     }
     this.analyser = null
     this.dataArray = null
+    this.timeDataArray = null
     this.lastDetectionTime.clear()
   }
 }
