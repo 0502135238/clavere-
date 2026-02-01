@@ -475,6 +475,11 @@ export default function CaptionsPage() {
   // Always render something - never return null or blank
   return (
     <ErrorBoundary>
+      {/* TEST: Always visible element to verify rendering */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999, background: 'red', color: 'white', padding: '20px', fontSize: '16px', fontWeight: 'bold' }}>
+        TEST: UI IS RENDERING - permissionState: {permissionState}, showUnsupported: {String(showUnsupported)}, isPaused: {String(isPaused)}
+      </div>
+      
       {/* Toast Notifications */}
       <ToastContainer />
 
