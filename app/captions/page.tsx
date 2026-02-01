@@ -39,12 +39,7 @@ export default function CaptionsPage() {
   const [sessionTitle] = useState('Live Session')
   const [sessionStartTime] = useState(new Date())
   
-  // Check browser support immediately (not in useEffect) - assume supported to show UI instantly
-  const SpeechRecognition = typeof window !== 'undefined' 
-    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-    : null
-  // Assume supported initially - check in background, don't block UI
-  const [isSupported] = useState<boolean>(SpeechRecognition ? true : true) // Default to true to show UI
+  // No browser check on initial render - assume supported to show UI instantly
   // Start with 'granted' to show UI immediately - check in background
   const [permissionState, setPermissionState] = useState<PermissionState>('granted')
   
@@ -63,6 +58,9 @@ export default function CaptionsPage() {
   const sessionServiceRef = useRef<SessionService | null>(null)
   const segmentIdCounter = useRef(0)
   const { showToast, ToastContainer } = useToast()
+  
+  // Check unsupported browser in background - don't block UI
+  const [showUnsupported, setShowUnsupported] = useState(false)
 
   // Initialize session service
   useEffect(() => {
