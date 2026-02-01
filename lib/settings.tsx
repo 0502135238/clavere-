@@ -28,21 +28,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
     // Load settings from localStorage
-    const saved = localStorage.getItem('caption-settings')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        setSettings({ ...defaultSettings, ...parsed })
-      } catch (e) {
-        console.error('Failed to load settings', e)
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('caption-settings')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          setSettings({ ...defaultSettings, ...parsed })
+        } catch (e) {
+          // Silent fail - use defaults
+        }
       }
     }
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || typeof window === 'undefined') return
     // Save settings to localStorage
-    localStorage.setItem('caption-settings', JSON.stringify(settings))
+    try {
+      localStorage.setItem('caption-settings', JSON.stringify(settings))
+    } catch (e) {
+      // Silent fail if localStorage unavailable
+    }
     
     // Apply theme
     const root = document.documentElement
@@ -64,12 +70,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, ...updates }))
   }
 
-  if (!mounted) {
-    return <>{children}</>
+  // Always provide context value, even before mounted
+  // This prevents "must be used within SettingsProvider" errors
+  const contextValue = {
+    settings: mounted ? settings : defaultSettings,
+    updateSettings,
   }
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
+    <SettingsContext.Provider value={contextValue}>
       {children}
     </SettingsContext.Provider>
   )
@@ -77,16 +86,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
 export function useSettings() {
   const context = useContext(SettingsContext)
-  // During SSR or if context is undefined, return default settings
+  // Always return default settings if context is undefined (shouldn't happen, but safe fallback)
   if (context === undefined) {
-    if (typeof window === 'undefined') {
-      // SSR: return default settings
-      return {
-        settings: defaultSettings,
-        updateSettings: () => {},
-      }
+    // Return default settings instead of throwing - prevents crashes
+    return {
+      settings: defaultSettings,
+      updateSettings: () => {},
     }
-    throw new Error('useSettings must be used within a SettingsProvider')
   }
   return context
 }
