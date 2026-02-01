@@ -1,0 +1,2 @@
+Git author email set to: pepperclaude.official@gmail.com
+This matches your Vercel account email.
