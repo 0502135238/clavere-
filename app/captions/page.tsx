@@ -98,12 +98,15 @@ export default function CaptionsPage() {
   }, [])
 
   // Initialize AI transcription service with overlap management
+  // Delay initialization to ensure UI renders first
   useEffect(() => {
     if (permissionState !== 'granted' || isPaused) {
       return
     }
 
-    const initializeService = async () => {
+    // Delay initialization significantly to ensure UI is fully rendered
+    const timeoutId = setTimeout(() => {
+      const initializeService = async () => {
       try {
         // Get configuration
         const appConfig = getAppConfig()
@@ -242,12 +245,14 @@ export default function CaptionsPage() {
           showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
           // Don't block - let user try again
         }
-    }
+      }
 
-    // Initialize in background without blocking
-    initializeService()
+      // Initialize in background without blocking
+      initializeService()
+    }, 500) // Delay 500ms to ensure UI renders first
 
     return () => {
+      clearTimeout(timeoutId)
       if (aiServiceRef.current) {
         aiServiceRef.current.stop()
       }
