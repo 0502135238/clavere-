@@ -69,46 +69,17 @@ export default function CaptionsPage() {
     }
   }, [sessionTitle])
 
-  // Check browser support and microphone permission in background (completely non-blocking)
-  useEffect(() => {
-    // Check browser support
-    if (typeof window !== 'undefined') {
-      const hasRecognition = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition
-      if (!hasRecognition) {
-        setShowUnsupported(true)
-        return
-      }
-    }
+  // NO initialization on mount - everything happens on user interaction only
 
-    // Check permission asynchronously without blocking UI - delay it
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      // Use longer delay to ensure UI renders first
-      setTimeout(() => {
-        navigator.mediaDevices
-          .getUserMedia({ audio: true })
-          .then((stream) => {
-            stream.getTracks().forEach((track) => track.stop())
-            setPermissionState('granted')
-          })
-          .catch(() => {
-            setPermissionState('denied')
-          })
-      }, 100) // Small delay to let UI render first
-    }
-  }, [])
-
-  // Initialize AI transcription service with overlap management
-  // Delay initialization to ensure UI renders first
+  // Initialize AI transcription service ONLY when user clicks play (not on mount)
   useEffect(() => {
-    if (permissionState !== 'granted' || isPaused) {
+    // Don't initialize anything until user explicitly starts
+    if (permissionState !== 'granted' || isPaused || !aiServiceRef.current) {
       return
     }
 
-    // Use requestAnimationFrame to ensure UI has painted before initialization
-    let rafId: number
-    const timeoutId = setTimeout(() => {
-      rafId = requestAnimationFrame(() => {
-        const initializeService = async () => {
+    // Only initialize if service doesn't exist yet (user clicked play)
+    const initializeService = async () => {
       try {
         // Get configuration
         const appConfig = getAppConfig()
@@ -249,22 +220,105 @@ export default function CaptionsPage() {
         }
       }
 
-      // Initialize in background without blocking
-      initializeService()
-      })
-    }, 300) // Delay 300ms then wait for next frame to ensure UI renders first
+    // Initialize in background without blocking
+    initializeService()
 
     return () => {
-      clearTimeout(timeoutId)
-      if (rafId) cancelAnimationFrame(rafId)
       if (aiServiceRef.current) {
         aiServiceRef.current.stop()
       }
     }
   }, [permissionState, isPaused, settings.captionMode])
 
+  // Initialize service ONLY when user clicks play button
+  const handleStart = () => {
+    if (aiServiceRef.current) return // Already started
+
+    // Check browser support silently
+    if (typeof window !== 'undefined') {
+      const hasRecognition = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition
+      if (!hasRecognition) {
+        setShowUnsupported(true)
+        return
+      }
+    }
+
+    // Request permission and start service
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => {
+          stream.getTracks().forEach((track) => track.stop())
+          setPermissionState('granted')
+          
+          // Now initialize service
+          const appConfig = getAppConfig()
+          const config: AIServiceConfig = {
+            type: appConfig.aiService,
+            deepgramApiKey: appConfig.deepgramApiKey,
+            openaiApiKey: appConfig.openaiApiKey,
+            assemblyaiApiKey: appConfig.assemblyaiApiKey,
+            language: appConfig.language,
+          }
+
+          let service
+          try {
+            service = AIServiceFactory.createTranscriptionService(config)
+          } catch {
+            service = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' })
+          }
+
+          const analyzer = new ConversationAnalyzer()
+          const overlapManager = new OverlapManager()
+          aiServiceRef.current = service as any
+          analyzerRef.current = analyzer
+          overlapManagerRef.current = overlapManager
+
+          const onChunk = (chunk: CaptionChunk): void => {
+            const processedText = processTextForMode(chunk, settings.captionMode)
+            const segmentId = `seg-${++segmentIdCounter.current}`
+            const segment: SpeechSegment = {
+              id: segmentId,
+              speakerId: chunk.speakerId || 'unknown',
+              text: processedText,
+              startTime: chunk.timestamp - 2000,
+              endTime: chunk.timestamp,
+              isComplete: true,
+              confidence: 0.9,
+            }
+            const { displayChunks } = overlapManager.addSegment(segment)
+            const cleanedChunks = cleanupOldChunks(displayChunks, 60000, 50)
+            setChunks(cleanedChunks)
+            setCurrentIndex(0)
+          }
+
+          const onErrorCallback = (error: Error): void => {
+            showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
+          }
+
+          if (service instanceof DeepgramService) {
+            service.initialize().then(() => {
+              service.start(onChunk, onErrorCallback)
+            }).catch(() => {
+              const fallback = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
+              (fallback as SpeechRecognitionStream).start(onChunk, onErrorCallback);
+            })
+          } else if (service instanceof SpeechRecognitionStream) {
+            service.start(onChunk, onErrorCallback)
+          }
+        })
+        .catch(() => {
+          setPermissionState('denied')
+        })
+    }
+  }
+
   const togglePause = () => {
-    if (!aiServiceRef.current) return
+    if (!aiServiceRef.current) {
+      // Start if not started yet
+      handleStart()
+      setIsPaused(false)
+      return
+    }
     if (isPaused) {
       setIsPaused(false)
     } else {
