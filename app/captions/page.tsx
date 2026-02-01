@@ -31,12 +31,13 @@ import { handleError, logError } from '@/lib/errorHandler'
 type PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'
 
 export default function CaptionsPage() {
+  const router = useRouter()
+  const { settings } = useSettings()
+  
+  // Log after hooks (React Rules of Hooks)
   if (typeof window !== 'undefined') {
     console.log('[CAPTIONS PAGE] Component rendering - START')
   }
-  
-  const router = useRouter()
-  const { settings } = useSettings()
   const [chunks, setChunks] = useState<CaptionChunk[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
