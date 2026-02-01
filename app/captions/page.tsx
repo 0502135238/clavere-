@@ -24,7 +24,6 @@ import { SessionService } from '@/lib/sessionService'
 import { CaptionChunk } from '@/lib/types'
 import { useSettings } from '@/lib/settings'
 import { useToast } from '@/hooks/useToast'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ApiKeyStatus } from '@/components/ApiKeyStatus'
 import { cleanupOldChunks } from '@/lib/performance'
 import { handleError, logError } from '@/lib/errorHandler'
@@ -45,7 +44,8 @@ export default function CaptionsPage() {
     ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
     : null
   const [isSupported] = useState<boolean | null>(SpeechRecognition ? true : false)
-  const [permissionState, setPermissionState] = useState<PermissionState>('checking')
+  // Start with 'granted' to show UI immediately - check in background
+  const [permissionState, setPermissionState] = useState<PermissionState>('granted')
   
   // Context state
   const [context, setContext] = useState<{
@@ -70,27 +70,28 @@ export default function CaptionsPage() {
     }
   }, [sessionTitle])
 
-  // Check microphone permission immediately (don't wait)
+  // Check microphone permission in background (non-blocking)
   useEffect(() => {
+    // Don't block - check in background
     if (isSupported === false) {
       setPermissionState('unsupported')
       return
     }
 
+    // Check permission asynchronously without blocking UI
     if (isSupported === true && typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      // Check permission quickly without blocking
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          stream.getTracks().forEach((track) => track.stop())
-          setPermissionState('granted')
-        })
-        .catch(() => {
-          setPermissionState('denied')
-        })
-    } else {
-      // If mediaDevices not available, assume granted (will fail gracefully later)
-      setPermissionState('granted')
+      // Use setTimeout to make it truly non-blocking
+      setTimeout(() => {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            stream.getTracks().forEach((track) => track.stop())
+            setPermissionState('granted')
+          })
+          .catch(() => {
+            setPermissionState('denied')
+          })
+      }, 0)
     }
   }, [isSupported])
 
@@ -127,8 +128,10 @@ export default function CaptionsPage() {
         try {
           service = AIServiceFactory.createTranscriptionService(config)
         } catch (error: any) {
-          console.error('❌ Failed to create service:', error.message)
-          showToast(`Service error: ${error.message}`, 'error')
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ Failed to create service:', error.message)
+          }
+          showToast('We\'re having trouble connecting. This is our fault - we\'re working on it!', 'error')
           // Fallback to Web Speech API
           service = AIServiceFactory.createTranscriptionService({
             ...config,
@@ -239,14 +242,12 @@ export default function CaptionsPage() {
         return () => {
           clearInterval(cleanupInterval)
         }
-      } catch (error) {
-        const appError = handleError(error)
-        logError(appError, { component: 'CaptionsPage', action: 'initialize' })
-        showToast('We\'re having trouble starting up. This is our fault - we\'re working on it!', 'error')
-        // Don't block - let user try again
-      } finally {
-        setIsReady(true)
-      }
+        } catch (error) {
+          const appError = handleError(error)
+          logError(appError, { component: 'CaptionsPage', action: 'initialize' })
+          showToast('We\'re having trouble. This is our fault - we\'re working on it!', 'error')
+          // Don't block - let user try again
+        }
     }
 
     // Initialize in background without blocking
