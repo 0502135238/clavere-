@@ -85,8 +85,6 @@ export default function CaptionsPage() {
     }
   }, [sessionTitle])
 
-  // NO initialization on mount - everything happens on user interaction only
-
   // Initialize AI transcription service ONLY when user clicks play (not on mount)
   useEffect(() => {
     if (typeof window !== 'undefined') {
