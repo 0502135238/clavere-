@@ -426,6 +426,11 @@ export default function CaptionsPage() {
   }
 
   const formatTime = (date: Date) => {
+    // Use consistent format to avoid hydration mismatch
+    if (typeof window === 'undefined') {
+      // Server: return static time to match client initial render
+      return '00:00'
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
@@ -520,7 +525,7 @@ export default function CaptionsPage() {
                   </span>
                 )}
               </div>
-              <div className="text-[10px] md:text-xs text-gray-400 mt-0.5">
+              <div className="text-[10px] md:text-xs text-gray-400 mt-0.5" suppressHydrationWarning>
                 {formatTime(sessionStartTime)} • EN
               </div>
             </div>
