@@ -427,8 +427,8 @@ export default function CaptionsPage() {
 
   const formatTime = (date: Date) => {
     // Use consistent format to avoid hydration mismatch
-    if (typeof window === 'undefined') {
-      // Server: return static time to match client initial render
+    // Return static time initially, update after mount
+    if (!mounted) {
       return '00:00'
     }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -481,7 +481,7 @@ export default function CaptionsPage() {
   return (
     <ErrorBoundary>
       {/* TEST: Always visible element to verify rendering */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999, background: 'red', color: 'white', padding: '20px', fontSize: '16px', fontWeight: 'bold' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999, background: 'red', color: 'white', padding: '20px', fontSize: '16px', fontWeight: 'bold' }} suppressHydrationWarning>
         TEST: UI IS RENDERING - permissionState: {permissionState}, showUnsupported: {String(showUnsupported)}, isPaused: {String(isPaused)}
       </div>
       
