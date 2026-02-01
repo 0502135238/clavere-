@@ -31,6 +31,8 @@ import { handleError, logError } from '@/lib/errorHandler'
 type PermissionState = 'checking' | 'granted' | 'denied' | 'unsupported'
 
 export default function CaptionsPage() {
+  console.log('[CAPTIONS PAGE] Component rendering - START')
+  
   const router = useRouter()
   const { settings } = useSettings()
   const [chunks, setChunks] = useState<CaptionChunk[]>([])
@@ -41,7 +43,10 @@ export default function CaptionsPage() {
   
   // No browser check on initial render - assume supported to show UI instantly
   // Start with 'granted' to show UI immediately - check in background
-  const [permissionState, setPermissionState] = useState<PermissionState>('granted')
+  const [permissionState, setPermissionState] = useState<PermissionState>(() => {
+    console.log('[CAPTIONS PAGE] Initial permissionState set to: granted')
+    return 'granted'
+  })
   
   // Context state
   const [context, setContext] = useState<{
@@ -64,19 +69,25 @@ export default function CaptionsPage() {
 
   // Initialize session service
   useEffect(() => {
+    console.log('[CAPTIONS PAGE] useEffect: Initialize session service')
     if (!sessionServiceRef.current) {
+      console.log('[CAPTIONS PAGE] Creating SessionService')
       sessionServiceRef.current = new SessionService(sessionTitle)
     }
   }, [sessionTitle])
 
   // NO initialization on mount - everything happens on user interaction only
+  console.log('[CAPTIONS PAGE] Component rendering - NO initialization code running')
 
   // Initialize AI transcription service ONLY when user clicks play (not on mount)
   useEffect(() => {
+    console.log('[CAPTIONS PAGE] useEffect: AI service init check', { permissionState, isPaused, hasService: !!aiServiceRef.current })
     // Don't initialize anything until user explicitly starts
     if (permissionState !== 'granted' || isPaused || !aiServiceRef.current) {
+      console.log('[CAPTIONS PAGE] Skipping AI service init - conditions not met')
       return
     }
+    console.log('[CAPTIONS PAGE] Starting AI service initialization')
 
     // Only initialize if service doesn't exist yet (user clicked play)
     const initializeService = async () => {
@@ -232,12 +243,19 @@ export default function CaptionsPage() {
 
   // Initialize service ONLY when user clicks play button
   const handleStart = () => {
-    if (aiServiceRef.current) return // Already started
+    console.log('[CAPTIONS PAGE] handleStart called')
+    if (aiServiceRef.current) {
+      console.log('[CAPTIONS PAGE] Service already started, returning')
+      return // Already started
+    }
 
+    console.log('[CAPTIONS PAGE] Checking browser support')
     // Check browser support silently
     if (typeof window !== 'undefined') {
       const hasRecognition = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition
+      console.log('[CAPTIONS PAGE] Browser support check:', { hasRecognition })
       if (!hasRecognition) {
+        console.log('[CAPTIONS PAGE] Browser not supported, showing unsupported message')
         setShowUnsupported(true)
         return
       }
@@ -245,13 +263,17 @@ export default function CaptionsPage() {
 
     // Request permission and start service
     if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      console.log('[CAPTIONS PAGE] Requesting microphone permission')
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
+          console.log('[CAPTIONS PAGE] Microphone permission granted')
           stream.getTracks().forEach((track) => track.stop())
           setPermissionState('granted')
           
+          console.log('[CAPTIONS PAGE] Getting app config')
           // Now initialize service
           const appConfig = getAppConfig()
+          console.log('[CAPTIONS PAGE] App config:', { serviceType: appConfig.aiService, hasDeepgram: !!appConfig.deepgramApiKey })
           const config: AIServiceConfig = {
             type: appConfig.aiService,
             deepgramApiKey: appConfig.deepgramApiKey,
@@ -262,16 +284,21 @@ export default function CaptionsPage() {
 
           let service
           try {
+            console.log('[CAPTIONS PAGE] Creating transcription service:', config.type)
             service = AIServiceFactory.createTranscriptionService(config)
-          } catch {
+            console.log('[CAPTIONS PAGE] Service created successfully')
+          } catch (error) {
+            console.error('[CAPTIONS PAGE] Failed to create service, falling back to webspeech:', error)
             service = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' })
           }
 
+          console.log('[CAPTIONS PAGE] Creating analyzer and overlap manager')
           const analyzer = new ConversationAnalyzer()
           const overlapManager = new OverlapManager()
           aiServiceRef.current = service as any
           analyzerRef.current = analyzer
           overlapManagerRef.current = overlapManager
+          console.log('[CAPTIONS PAGE] Service refs set')
 
           const onChunk = (chunk: CaptionChunk): void => {
             const processedText = processTextForMode(chunk, settings.captionMode)
@@ -296,32 +323,43 @@ export default function CaptionsPage() {
           }
 
           if (service instanceof DeepgramService) {
+            console.log('[CAPTIONS PAGE] Initializing Deepgram service')
             service.initialize().then(() => {
+              console.log('[CAPTIONS PAGE] Deepgram initialized, starting transcription')
               service.start(onChunk, onErrorCallback)
-            }).catch(() => {
+            }).catch((error) => {
+              console.error('[CAPTIONS PAGE] Deepgram init failed, falling back:', error)
               const fallback = AIServiceFactory.createTranscriptionService({ ...config, type: 'webspeech' });
               (fallback as SpeechRecognitionStream).start(onChunk, onErrorCallback);
             })
           } else if (service instanceof SpeechRecognitionStream) {
+            console.log('[CAPTIONS PAGE] Starting Web Speech API service')
             service.start(onChunk, onErrorCallback)
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('[CAPTIONS PAGE] Microphone permission denied:', error)
           setPermissionState('denied')
         })
+    } else {
+      console.log('[CAPTIONS PAGE] navigator.mediaDevices not available')
     }
   }
 
   const togglePause = () => {
+    console.log('[CAPTIONS PAGE] togglePause called', { hasService: !!aiServiceRef.current, isPaused })
     if (!aiServiceRef.current) {
       // Start if not started yet
+      console.log('[CAPTIONS PAGE] No service, calling handleStart')
       handleStart()
       setIsPaused(false)
       return
     }
     if (isPaused) {
+      console.log('[CAPTIONS PAGE] Resuming')
       setIsPaused(false)
     } else {
+      console.log('[CAPTIONS PAGE] Pausing')
       aiServiceRef.current.stop()
       setIsPaused(true)
     }
@@ -339,7 +377,10 @@ export default function CaptionsPage() {
     setPermissionState('denied')
   }
 
+  console.log('[CAPTIONS PAGE] Render check:', { showUnsupported, permissionState })
+
   if (showUnsupported) {
+    console.log('[CAPTIONS PAGE] Rendering UnsupportedBrowser')
     return (
       <ErrorBoundary>
         <UnsupportedBrowser />
@@ -349,6 +390,7 @@ export default function CaptionsPage() {
 
   // Show permission prompt only if explicitly denied
   if (permissionState === 'denied') {
+    console.log('[CAPTIONS PAGE] Rendering PermissionPrompt')
     return (
       <ErrorBoundary>
         <PermissionPrompt
@@ -361,6 +403,7 @@ export default function CaptionsPage() {
 
   // Show UI immediately - don't wait for permission check
   // Permission check happens in background, will prompt if needed
+  console.log('[CAPTIONS PAGE] Rendering main UI')
 
   return (
     <ErrorBoundary>
